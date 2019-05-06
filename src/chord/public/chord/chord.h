@@ -1,15 +1,10 @@
 #pragma once
 
-#include "net/types.h"
-#include "net/socket_dgram.h"
-
-namespace Chord
-{
-	using namespace Net;
-} // namespace Chord
-
 //////////////////////////////////////////////////
 // Chord includes
 //////////////////////////////////////////////////
 
+#include "chord_fwd.h"
+#include "types.h"
 #include "request.h"
+#include "local_node.h"

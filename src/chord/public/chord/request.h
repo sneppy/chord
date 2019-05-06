@@ -1,7 +1,6 @@
 #pragma once
 
-#include "coremin.h"
-#include "chord.h"
+#include "chord_fwd.h"
 
 namespace Chord
 {
@@ -30,7 +29,7 @@ namespace Chord
 		uint32 id : 16;
 
 		/// Destination operand
-		ubyte dest[Math::max(20UL, sizeof(Ipv4))];
+		ubyte dst[Math::max(20UL, sizeof(Ipv4))];
 
 		/// Source operand
 		ubyte src[Math::max(20UL, sizeof(Ipv4))];
@@ -70,14 +69,14 @@ namespace Chord
 		/// Returns destination operand
 		/// @{
 		template<typename T>
-		FORCE_INLINE typename EnableIf<IsPointer<T>::value, T>::Type			getDest()		{ return reinterpret_cast<T>(dest); }
+		FORCE_INLINE typename EnableIf<IsPointer<T>::value, T>::Type			getDst()		{ return reinterpret_cast<T>(dst); }
 		template<typename T>
-		FORCE_INLINE typename EnableIf<IsPointer<T>::value, const T>::Type		getDest() const	{ return reinterpret_cast<const T>(dest); }
+		FORCE_INLINE typename EnableIf<IsPointer<T>::value, const T>::Type		getDst() const	{ return reinterpret_cast<const T>(dst); }
 
 		template<typename T>
-		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, T&>::Type			getDest()		{ return *reinterpret_cast<T*>(dest); }
+		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, T&>::Type			getDst()		{ return *reinterpret_cast<T*>(dst); }
 		template<typename T>
-		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, const T&>::Type	getDest() const	{ return *reinterpret_cast<const T*>(dest); }
+		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, const T&>::Type	getDst() const	{ return *reinterpret_cast<const T*>(dst); }
 		/// @}
 
 		/**
@@ -97,9 +96,9 @@ namespace Chord
 		 * @param [in] val destination value
 		 */
 		template<typename T>
-		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setDest(typename ConstRef<T>::Type val)
+		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setDst(typename ConstRef<T>::Type val)
 		{
-			moveOrCopy(*reinterpret_cast<T*>(dest), val);
+			moveOrCopy(*reinterpret_cast<T*>(dst), val);
 		}
 
 		/// Do hop, increment count

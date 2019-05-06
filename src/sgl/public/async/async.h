@@ -2,6 +2,7 @@
 
 #include "core_types.h"
 #include "hal/runnable_thread.h"
+#include "hal/runnable.h"
 #include "templates/function.h"
 #include "templates/reference.h"
 #include "future.h"
