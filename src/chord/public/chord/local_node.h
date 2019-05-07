@@ -47,6 +47,9 @@ namespace Chord
 
 		/// Request id generator
 		UUIdGenerator<uint16> requestIdGenerator;
+
+		/// The index of the finger we'll update
+		uint32 nextFinger;
 	
 	public:
 		/// Default constructor
@@ -119,9 +122,9 @@ namespace Chord
 		 * @return join status
 		 */
 		bool join(const Ipv4 & peer);
-	
+
 		/**
-		 * look up key in chord ring
+		 * Look up key in chord ring
 		 * 
 		 * @param [in] key key to lookup
 		 * @return future successor info
@@ -142,6 +145,11 @@ namespace Chord
 		 * @param [in] req incoming lookup request
 		 */
 		void handleLookup(const Request & req);
+
+		/**
+		 * Update node fingers
+		 */
+		void update();
 
 		/**
 		 * Returns whether number falls in range

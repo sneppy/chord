@@ -19,6 +19,7 @@ namespace Chord
 		while (bRunning)
 		{
 			if (node->socket.read(req, req.sender) && !req.hop().isExpired())
+				// Single threaded handler
 				node->handleRequest(req);
 		}
 	}

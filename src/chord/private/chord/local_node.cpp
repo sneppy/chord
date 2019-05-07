@@ -9,6 +9,7 @@ namespace Chord
 		, predecessor{}
 		, socket{}
 		, requestIdGenerator{}
+		, nextFinger{1U}
 	{
 		// Initialize node
 		init();
@@ -162,5 +163,24 @@ namespace Chord
 			
 			socket.write<Request>(res, res.recipient);
 		}
+	}
+
+	void LocalNode::update()
+	{
+		// Update next finger
+		const NodeInfo & next = findSuccessor(nextFinger);
+
+		Request req = makeRequest(
+			Request::LOOKUP,
+			next.addr
+		);
+		req.setSrc<NodeInfo>(self);
+		req.setDst<uint32>(nextFinger);
+
+		// Send lookup request
+		socket.write<Request>(req, req.recipient);
+
+		// Next finger
+		nextFinger = ++nextFinger == 32 ? 1U : nextFinger;
 	}
 } // namespace Chord
