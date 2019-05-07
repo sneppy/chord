@@ -16,6 +16,8 @@ namespace Chord
 	 */
 	class LocalNode
 	{
+		friend ReceiveTask;
+
 	protected:
 		union
 		{
@@ -106,6 +108,10 @@ namespace Chord
 		}
 
 	public:
+		//////////////////////////////////////////////////
+		// Chord API
+		//////////////////////////////////////////////////
+
 		/**
 		 * Join chord ring (blocking operation)
 		 * 
@@ -120,9 +126,23 @@ namespace Chord
 		 * @param [in] key key to lookup
 		 * @return future successor info
 		 */
-		Promise<NodeInfo> lookup(uint32 key);	
+		Promise<NodeInfo> lookup(uint32 key);
 
 	protected:
+		/**
+		 * Process incoming requests
+		 * 
+		 * @param [in] req incoming request
+		 */
+		void handleRequest(const Request & req);
+		
+		/**
+		 * Process lookup requests
+		 * 
+		 * @param [in] req incoming lookup request
+		 */
+		void handleLookup(const Request & req);
+
 		/**
 		 * Returns whether number falls in range
 		 * 

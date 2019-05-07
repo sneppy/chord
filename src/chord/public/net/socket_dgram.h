@@ -32,6 +32,12 @@ namespace Net
 			if (sockfd != -1) ::close(sockfd);
 		}
 
+		/// Returns true if it's valid
+		FORCE_INLINE bool isInit() const
+		{
+			return sockfd != -1;
+		}
+
 		/// Get socket binding address
 		/// @{
 		template<typename IpType = Ipv4>

@@ -7,6 +7,7 @@ namespace Net
 	{
 		uint32 n = 0;
 		uint32 bit = 0;
+		uint32 byte = 0;
 		ubyte _ = 1;
 		const char * cc = str;
 
@@ -20,7 +21,8 @@ namespace Net
 					_ = 0;
 				case '.':
 					// Add component to out ip
-					addr.host |= n << bit; n = 0;
+					addr.hostBytes[byte++] = n; n = 0;
+					//addr.host |= n << bit; n = 0;
 
 					// Next byte
 					bit += 8U;
@@ -30,7 +32,8 @@ namespace Net
 				case '\n':
 				case '\r':
 					// Add component
-					addr.host |= n << bit; n = 0;
+					addr.hostBytes[byte++] = n; n = 0;
+					//addr.host |= n << bit; n = 0;
 
 					// No port, return
 					// If we read at least one character, parsing is successful

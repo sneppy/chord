@@ -25,7 +25,7 @@ public:
 	 * 
 	 * @return exit code
 	 */
-	virtual FORCE_INLINE int32 run() { return EXIT_SUCCESS; }
+	virtual FORCE_INLINE int32 run() { return 0; }
 
 	/**
 	 * @brief Stop the runnable objects gently
