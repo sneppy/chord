@@ -25,7 +25,8 @@ namespace Chord
 			prevTick = currTick;
 
 			if (updateTimer.tick(dt))
-				node->update();
+				node->stabilize(),
+				node->fixFingers();
 		}
 	}
 } // namespace Chord

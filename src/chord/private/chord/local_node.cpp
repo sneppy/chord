@@ -106,28 +106,100 @@ namespace Chord
 		return out;
 	}
 
+	void LocalNode::stabilize()
+	{
+		Request req = makeRequest(
+			Request::NOTIFY,
+			successor.addr,
+			[this](const Request & req) {
+				
+				const NodeInfo & target = req.getDst<NodeInfo>();
+				if (successor.id == id || rangeOpen(target.id, id, successor.id))
+				{
+					// Update successor
+					setSuccessor(target);
+
+					printf("LOG: new successor is %s\n", *successor.getInfoString());
+				}
+			}
+		);
+		req.setSrc<NodeInfo>(self);
+
+		// Send notify
+		socket.write<Request>(req, req.recipient);
+	}
+
+	void LocalNode::fixFingers()
+	{
+		const uint32 key = id + (1U << nextFinger);
+		const uint32 i = nextFinger;
+
+		/**
+		 * Here there is a piece of repeated code
+		 * copied from @ref lookup
+		 */
+		if (rangeOpenClosed(key, id, successor.id))
+		{
+			// Update finger
+			setFinger(successor, i);
+			
+			printf("LOG: updating finger #%u with %s\n", i, *fingers[i].getInfoString());
+		}
+		else
+		{
+			// Update next finger
+			const NodeInfo & next = findSuccessor(key);
+
+			Request req = makeRequest(
+				Request::LOOKUP,
+				next.addr,
+				[this, i](const Request & req){
+
+					// Set new finger info
+					const NodeInfo & target = req.getDst<NodeInfo>();
+					fingers[i] = target;
+
+					printf("LOG: updating finger #%u with %s\n", i, *target.getInfoString());
+				}
+			);
+			req.setSrc<NodeInfo>(self);
+			req.setDst<uint32>(key);
+
+			// Send lookup request
+			socket.write<Request>(req, req.recipient);
+		}
+
+		// Next finger
+		nextFinger = ++nextFinger == 32 ? 1U : nextFinger;
+	}
+
 	void LocalNode::handleRequest(const Request & req)
 	{
 		switch (req.type)
 		{
 	#if BUILD_DEBUG
 		case Request::PING:
-			printf("LOG: received PING from %s\n", *getIpString(req.sender));
+			printf("LOG: received PING from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			break;
 	#endif
 
 		case Request::REPLY:
-			printf("LOG: received REPLY from %s\n", *getIpString(req.sender));
+			printf("LOG: received REPLY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			handleReply(req);
 			break;
 
 		case Request::LOOKUP:
-			printf("LOG: received LOOKUP from %s\n", *getIpString(req.sender));
+			printf("LOG: received LOOKUP from %s with id 0x%08x and hop count = %u\n", *getIpString(req.sender), req.id, req.hopCount);
 			handleLookup(req);
 			break;
 
+		case Request::NOTIFY:
+			printf("LOG: received NOTIFY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			handleNotify(req);
+			break;
+
 		case Request::LEAVE:
-			printf("LOG: received LEAVE from %s\n", *getIpString(req.sender));
+			printf("LOG: received LEAVE from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			break;
 		
 		default:
@@ -152,7 +224,7 @@ namespace Chord
 		const uint32 key = req.getDst<uint32>();
 
 		// If successor is succ(key) or successor is null
-		if (rangeClosedOpen(key, id, successor.id) || successor.id == id)
+		if (rangeOpenClosed(key, id, successor.id) || successor.id == id)
 		{
 			// Reply to source node
 			Request res{req};
@@ -163,6 +235,8 @@ namespace Chord
 			res.reset();
 
 			socket.write<Request>(res, res.recipient);
+
+			printf("LOG: found key 0x%08x @ [%s]\n", key, *successor.getInfoString());
 		}
 		else
 		{
@@ -170,38 +244,33 @@ namespace Chord
 			const NodeInfo & next = findSuccessor(key);
 
 			// Forward request
-			Request res{req};
-			res.sender	= self.addr;
-			res.recipient = next.addr;
+			Request fwd{req};
+			fwd.sender	= self.addr;
+			fwd.recipient = next.addr;
 			
-			socket.write<Request>(res, res.recipient);
+			socket.write<Request>(fwd, fwd.recipient);
 		}
 	}
 
-	void LocalNode::update()
+	void LocalNode::handleNotify(const Request & req)
 	{
-		// Update next finger
-		const NodeInfo & next = findSuccessor(nextFinger);
+		const NodeInfo & src = req.getSrc<NodeInfo>();
 
-		Request req = makeRequest(
-			Request::LOOKUP,
-			next.addr,
-			[this, i = nextFinger](const Request & req){
+		// Reply with current predecessor
+		Request res{req};
+		res.type = Request::REPLY;
+		res.sender = self.addr;
+		res.recipient = src.addr;
+		res.setDst<NodeInfo>(predecessor);
 
-				// Set new finger info
-				const NodeInfo & target = req.getDst<NodeInfo>();
-				fingers[i] = target;
+		socket.write<Request>(res, res.recipient);
+		
+		if (predecessor.id == id || rangeOpen(src.id, predecessor.id, id))
+		{
+			// Update predecessor
+			setPredecessor(src);
 
-				printf("LOG: updating finger #%u with %s\n", i, *target.getInfoString());
-			}
-		);
-		req.setSrc<NodeInfo>(self);
-		req.setDst<uint32>(nextFinger);
-
-		// Send lookup request
-		socket.write<Request>(req, req.recipient);
-
-		// Next finger
-		nextFinger = ++nextFinger == 32 ? 1U : nextFinger;
+			printf("LOG: new predecessor is %s\n", *predecessor.getInfoString());
+		}
 	}
 } // namespace Chord

@@ -16,6 +16,7 @@ namespace Chord
 			PING = 0,
 			REPLY,
 			LOOKUP,
+			NOTIFY,
 			LEAVE
 		};
 		

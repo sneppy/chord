@@ -65,6 +65,28 @@ namespace Chord
 			return self.addr;
 		}
 
+		//////////////////////////////////////////////////
+		// Thread-sage setters
+		// TODO
+		//////////////////////////////////////////////////
+		
+		/// Set finger
+		FORCE_INLINE void setFinger(const NodeInfo & node, uint32 i)
+		{
+			fingers[i] = node;
+		}
+
+		/// Set successor
+		FORCE_INLINE void setSuccessor(const NodeInfo & node)
+		{
+			setFinger(node, 0);
+		}
+
+		FORCE_INLINE void setPredecessor(const NodeInfo & node)
+		{
+			predecessor = node;
+		}
+
 	protected:
 		/// Node initialization
 		bool init();
@@ -89,7 +111,7 @@ namespace Chord
 		{
 			Request out{type};
 			out.sender = self.addr;
-			out.recipient = recipient; // !
+			out.recipient = recipient;
 			out.flags = 0;
 			out.ttl = ttl;
 			out.hopCount = 0;
@@ -126,6 +148,17 @@ namespace Chord
 
 	protected:
 		/**
+		 * Stabilize node and notify successor
+		 */
+		void stabilize();
+
+		/**
+		 * Fix fingers
+		 */
+		void fixFingers();
+
+	protected:
+		/**
 		 * Process incoming requests
 		 * 
 		 * @param [in] req incoming request
@@ -147,28 +180,24 @@ namespace Chord
 		void handleLookup(const Request & req);
 
 		/**
-		 * Update node fingers
+		 * Process notify request
+		 * 
+		 * @param [in] req incoming notify request
 		 */
-		void update();
-
+		void handleNotify(const Request & req);
+		
 	public:
 		/// Returns a string representation of the node
-		String getInfoString() const
+		void printInfo() const
 		{
-			char info[1024] = {};
-			char *buffer = info;
-			uint32 s = sizeof(info), n = 0;
+			printf("# -----------------\n");
+			printf("# node %s\n", *self.getInfoString());
+			printf("# ---- | ----------\n");
+			printf("# pred | %s\n", predecessor.id == id ? "-" : *predecessor.getInfoString());
+			printf("# succ | %s\n", successor.id == id ? "-" : *successor.getInfoString());
 
-			s -= (n = snprintf(buffer += n, s, "// -----------Node info------------\n"));
-			s -= (n = snprintf(buffer += n, s, "// self | %s\n", *self.getInfoString()));
-			s -= (n = snprintf(buffer += n, s, "// pred | %s\n", predecessor.id == id ? "NIL" : *predecessor.getInfoString()));
-
-			for (uint32 i = 0; i < 32; ++i)
-					s -= (n = snprintf(buffer += n, s, "// f#%02u | %s\n", i, fingers[i].id == id ? "NIL" : *fingers[i].getInfoString()));
-			
-			s -= (n = snprintf(buffer += n, s, "// --------------------------------\n"));
-
-			return String(info);
+			for (uint32 i = 1; i < 32; ++i)
+				printf("#   %02u | %s\n", i, fingers[i].id == id ? "self" : *fingers[i].getInfoString());
 		}
 
 	protected:
