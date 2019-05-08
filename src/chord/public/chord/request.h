@@ -115,4 +115,27 @@ namespace Chord
 			return *this;
 		}
 	};
+
+	/**
+	 * @struct RequestCallback chord/request.h
+	 */
+	struct RequestCallback
+	{
+	public:
+		/// Callback types
+		using CallbackT = Function<void(const Request&)>;
+
+	public:
+		/// Success callback
+		CallbackT onSuccess;
+
+	public:
+		/// Default constructor
+		FORCE_INLINE RequestCallback()
+			: onSuccess(nullptr) {}
+		
+		/// Callback constructor
+		explicit FORCE_INLINE RequestCallback(CallbackT _onSuccess)
+			: onSuccess{_onSuccess} {}
+	};
 } // Chord

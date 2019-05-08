@@ -16,12 +16,12 @@ namespace Chord
 
 	int32 UpdateTask::run()
 	{
-		const bool bRunning = false;
+		const bool bRunning = true;
 		while (bRunning)
 		{
 			// Update time variables
 			// ! Just here
-			const float32 dt = (currTick = clock()) - prevTick;
+			const float32 dt = ((currTick = clock()) - prevTick) / (float32)CLOCKS_PER_SEC;
 			prevTick = currTick;
 
 			if (updateTimer.tick(dt))

@@ -17,6 +17,7 @@ namespace Chord
 	class LocalNode
 	{
 		friend ReceiveTask;
+		friend UpdateTask;
 
 	protected:
 		union
@@ -47,6 +48,9 @@ namespace Chord
 
 		/// Request id generator
 		UUIdGenerator<uint16> requestIdGenerator;
+
+		/// Request map
+		Map<uint16, RequestCallback> callbacks;
 
 		/// The index of the finger we'll update
 		uint32 nextFinger;
@@ -81,7 +85,7 @@ namespace Chord
 		 * @param [in] recipient request target
 		 * @return forged request
 		 */
-		FORCE_INLINE Request makeRequest(Request::Type type, Ipv4 recipient, uint32 ttl = (uint32)-1)
+		FORCE_INLINE Request makeRequest(Request::Type type, Ipv4 recipient, RequestCallback::CallbackT onSuccess = nullptr, uint32 ttl = (uint32)-1)
 		{
 			Request out{type};
 			out.sender = self.addr;
@@ -93,21 +97,10 @@ namespace Chord
 			// Assign unique id
 			out.id = requestIdGenerator.getNext();
 
-			return out;
-		}
+			// Insert callback
+			if (onSuccess) callbacks.insert(out.id, RequestCallback(onSuccess));
 
-		/**
-		 * Create and send a new request
-		 * 
-		 * @param [out] req forged request
-		 * @param [in] type request type
-		 * @param [in] recipient request target
-		 * @return true if request was sent
-		 */
-		FORCE_INLINE bool sendRequest(Request & req, Request::Type type, Ipv4 recipient, uint32 ttl = (uint32)-1)
-		{
-			req = makeRequest(type, recipient, ttl);
-			return socket.write<Request>(req, req.recipient);
+			return out;
 		}
 
 	public:
@@ -138,9 +131,16 @@ namespace Chord
 		 * @param [in] req incoming request
 		 */
 		void handleRequest(const Request & req);
+
+		/**
+		 * Process reply request
+		 * 
+		 * @param [in] req incoming reply request
+		 */
+		void handleReply(const Request & req);
 		
 		/**
-		 * Process lookup requests
+		 * Process lookup request
 		 * 
 		 * @param [in] req incoming lookup request
 		 */
@@ -151,6 +151,27 @@ namespace Chord
 		 */
 		void update();
 
+	public:
+		/// Returns a string representation of the node
+		String getInfoString() const
+		{
+			char info[1024] = {};
+			char *buffer = info;
+			uint32 s = sizeof(info), n = 0;
+
+			s -= (n = snprintf(buffer += n, s, "// -----------Node info------------\n"));
+			s -= (n = snprintf(buffer += n, s, "// self | %s\n", *self.getInfoString()));
+			s -= (n = snprintf(buffer += n, s, "// pred | %s\n", predecessor.id == id ? "NIL" : *predecessor.getInfoString()));
+
+			for (uint32 i = 0; i < 32; ++i)
+					s -= (n = snprintf(buffer += n, s, "// f#%02u | %s\n", i, fingers[i].id == id ? "NIL" : *fingers[i].getInfoString()));
+			
+			s -= (n = snprintf(buffer += n, s, "// --------------------------------\n"));
+
+			return String(info);
+		}
+
+	protected:
 		/**
 		 * Returns whether number falls in range
 		 * 

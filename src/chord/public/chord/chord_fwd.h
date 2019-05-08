@@ -15,6 +15,7 @@ namespace Chord
 
 	class LocalNode;
 	class ReceiveTask;
+	class UpdateTask;
 } // namespace Chord
 
 #include "types.h"

@@ -9,6 +9,7 @@ namespace Chord
 		, predecessor{}
 		, socket{}
 		, requestIdGenerator{}
+		, callbacks{}
 		, nextFinger{1U}
 	{
 		// Initialize node
@@ -117,6 +118,7 @@ namespace Chord
 
 		case Request::REPLY:
 			printf("LOG: received REPLY from %s\n", *getIpString(req.sender));
+			handleReply(req);
 			break;
 
 		case Request::LOOKUP:
@@ -130,6 +132,17 @@ namespace Chord
 		
 		default:
 			break;
+		}
+	}
+
+	void LocalNode::handleReply(const Request & req)
+	{
+		auto callbackIt = callbacks.find(req.id);
+		if (callbackIt != callbacks.nil())
+		{
+			// Execute callback
+			auto callback = callbackIt->second;
+			callback.onSuccess(req);
 		}
 	}
 
@@ -172,7 +185,15 @@ namespace Chord
 
 		Request req = makeRequest(
 			Request::LOOKUP,
-			next.addr
+			next.addr,
+			[this, i = nextFinger](const Request & req){
+
+				// Set new finger info
+				const NodeInfo & target = req.getDst<NodeInfo>();
+				fingers[i] = target;
+
+				printf("LOG: updating finger #%u with %s\n", i, *target.getInfoString());
+			}
 		);
 		req.setSrc<NodeInfo>(self);
 		req.setDst<uint32>(nextFinger);
