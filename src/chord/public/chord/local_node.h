@@ -193,8 +193,8 @@ namespace Chord
 			printf("# -----------------\n");
 			printf("# node %s\n", *self.getInfoString());
 			printf("# ---- | ----------\n");
-			printf("# pred | %s\n", predecessor.id == id ? "-" : *predecessor.getInfoString());
-			printf("# succ | %s\n", successor.id == id ? "-" : *successor.getInfoString());
+			printf("# pred | %s\n", predecessor.id == id ? "self" : *predecessor.getInfoString());
+			printf("# succ | %s\n", successor.id == id ? "self" : *successor.getInfoString());
 
 			for (uint32 i = 1; i < 32; ++i)
 				printf("#   %02u | %s\n", i, fingers[i].id == id ? "self" : *fingers[i].getInfoString());

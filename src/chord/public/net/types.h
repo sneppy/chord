@@ -13,6 +13,11 @@ namespace Net
 {
 	union Ipv4
 	{
+	public:
+		/// Wildcard ipv4 address
+		static const Ipv4 any;
+
+	public:
 		struct
 		{
 			/// Address family (ipv4 or ipv6)
@@ -48,6 +53,7 @@ namespace Net
 
 	union Ipv6
 	{
+	public:
 		struct
 		{
 			/// Address family

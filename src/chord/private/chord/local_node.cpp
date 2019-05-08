@@ -50,8 +50,8 @@ namespace Chord
 	{
 		const uint32 offset = key - id;
 
-		for (uint32 i = Math::getP2Index(offset, 32); i > 0; --i)
-			if (fingers[i].id != id) return fingers[i];
+		for (uint32 i = /* Math::getP2Index(offset, 32) */31; i > 0; --i)
+			if (rangeOpen(fingers[i].id, id, key)/* fingers[i].id != id */) return fingers[i];
 		
 		// Return successor if all other fingers failed
 		return successor;
@@ -108,6 +108,11 @@ namespace Chord
 
 	void LocalNode::stabilize()
 	{
+		// This op is slightly different from
+		// the one described in the original
+		// paper, for we first notify our
+		// current successor than maybe update
+		// it
 		Request req = makeRequest(
 			Request::NOTIFY,
 			successor.addr,
@@ -135,7 +140,7 @@ namespace Chord
 		const uint32 i = nextFinger;
 
 		/**
-		 * Here there is a piece of repeated code
+		 * Here there is a piece of code
 		 * copied from @ref lookup
 		 */
 		if (rangeOpenClosed(key, id, successor.id))
@@ -155,11 +160,10 @@ namespace Chord
 				next.addr,
 				[this, i](const Request & req){
 
-					// Set new finger info
-					const NodeInfo & target = req.getDst<NodeInfo>();
-					fingers[i] = target;
+					// Update finger
+					setFinger(req.getDst<NodeInfo>(), i);
 
-					printf("LOG: updating finger #%u with %s\n", i, *target.getInfoString());
+					printf("LOG: updating finger #%u with %s\n", i, *fingers[i].getInfoString());
 				}
 			);
 			req.setSrc<NodeInfo>(self);
@@ -170,7 +174,7 @@ namespace Chord
 		}
 
 		// Next finger
-		nextFinger = ++nextFinger == 32 ? 1U : nextFinger;
+		nextFinger = ++nextFinger == 32U ? 1U : nextFinger;
 	}
 
 	void LocalNode::handleRequest(const Request & req)
@@ -224,7 +228,7 @@ namespace Chord
 		const uint32 key = req.getDst<uint32>();
 
 		// If successor is succ(key) or successor is null
-		if (rangeOpenClosed(key, id, successor.id) || successor.id == id)
+		if (rangeOpenClosed(key, id, successor.id))
 		{
 			// Reply to source node
 			Request res{req};
@@ -235,20 +239,34 @@ namespace Chord
 			res.reset();
 
 			socket.write<Request>(res, res.recipient);
-
-			printf("LOG: found key 0x%08x @ [%s]\n", key, *successor.getInfoString());
 		}
 		else
 		{
 			// Find closest preceding node
 			const NodeInfo & next = findSuccessor(key);
 
-			// Forward request
-			Request fwd{req};
-			fwd.sender	= self.addr;
-			fwd.recipient = next.addr;
-			
-			socket.write<Request>(fwd, fwd.recipient);
+			// Break infinite loop
+			if (next.id == id)
+			{
+				// Reply to source node
+				Request res{req};
+				res.type = Request::REPLY;
+				res.sender = self.addr;
+				res.recipient = src.addr;
+				res.setDst<NodeInfo>(self);
+				res.reset();
+
+				socket.write<Request>(res, res.recipient);
+			}
+			else
+			{
+				// Forward request
+				Request fwd{req};
+				fwd.sender	= self.addr;
+				fwd.recipient = next.addr;
+				
+				socket.write<Request>(fwd, fwd.recipient);
+			}
 		}
 	}
 
@@ -265,6 +283,7 @@ namespace Chord
 
 		socket.write<Request>(res, res.recipient);
 		
+		// if predecessor is nil or n -> (predecessor, self)
 		if (predecessor.id == id || rangeOpen(src.id, predecessor.id, id))
 		{
 			// Update predecessor

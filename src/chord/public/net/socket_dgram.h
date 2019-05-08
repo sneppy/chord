@@ -94,7 +94,7 @@ namespace Net
 		}
 		FORCE_INLINE bool bind()
 		{
-			Ipv4 addr{AF_INET, htons(0), htonl(INADDR_ANY)};
+			Ipv4 addr = Ipv4::any;
 			return bind<Ipv4>(addr);
 		}
 		/// @}
