@@ -73,11 +73,14 @@ namespace Chord
 
 		// Insert callback
 		if (onSuccess || onError)
+		{
+			ScopeLock _(&callbacksGuard);
 			callbacks.insert(out.id, RequestCallback(onSuccess, onError ? onError : [this, recipient]() {
 
 				// Check this peer
 				checkPeer(recipient);
 			}, 5.f));
+		}
 
 		return out;
 	}
@@ -120,10 +123,17 @@ namespace Chord
 			Request req = makeRequest(
 				Request::LOOKUP,
 				next,
+
+				// * When key is found, set promise
 				[out](const Request & req) mutable {
 
 					out.set(req.getDst<NodeInfo>());
 				},
+
+				// * If key is not found, we set an invalid
+				// * peer, identified by the wildcard address.
+				// * We also check that the finger we asked
+				// * for the key is not dead
 				[this, out, next]() mutable {
 
 					// Key not found, something went wrong
@@ -131,7 +141,8 @@ namespace Chord
 
 					// Check node
 					checkPeer(next);
-				}
+				},
+				3.f
 			);
 			req.setSrc<NodeInfo>(self);
 			req.setDst<uint32>(key);
@@ -145,6 +156,8 @@ namespace Chord
 
 	void LocalNode::leave()
 	{
+		// Inform successor and predecessor
+		// we are leaving the network
 		Request req{Request::LEAVE};
 		req.sender = self.addr;
 		req.setSrc<NodeInfo>(self);
@@ -164,11 +177,11 @@ namespace Chord
 
 	void LocalNode::stabilize()
 	{
-		// This op is slightly different from
-		// the one described in the original
-		// paper, for we first notify our
-		// current successor than maybe update
-		// it
+		// * This op is slightly different from
+		// * the one described in the original
+		// * paper, for we first notify our current
+		// * successor than maybe update it
+
 		Request req = makeRequest(
 			Request::NOTIFY,
 			successor,
@@ -221,6 +234,7 @@ namespace Chord
 
 					printf("LOG: updating finger #%u with %s\n", i, *fingers[i].getInfoString());
 				}
+				// * checkPeer(next) on error
 			);
 			req.setSrc<NodeInfo>(self);
 			req.setDst<uint32>(key);
@@ -295,6 +309,9 @@ namespace Chord
 
 	void LocalNode::checkRequests(float32 dt)
 	{
+		// Lock all callbacks
+		ScopeLock _(&callbacksGuard);
+
 		for (auto it = callbacks.begin(); it != callbacks.end(); ++it)
 		{
 			auto id			= it->first;
@@ -311,7 +328,7 @@ namespace Chord
 			}
 		}
 
-		printf("LOG: %u pending requests\n", callbacks.getCount());
+		printf("LOG: %llu pending requests\n", callbacks.getCount());
 	}
 
 	void LocalNode::handleRequest(const Request & req)
@@ -357,6 +374,10 @@ namespace Chord
 
 	void LocalNode::handleReply(const Request & req)
 	{
+		// Lock all callbacks
+		ScopeLock _(&callbacksGuard);
+
+		// Find associated callback
 		auto it = callbacks.find(req.id);
 		if (it != callbacks.nil())
 		{
@@ -458,6 +479,6 @@ namespace Chord
 
 		socket.write<Request>(res, res.recipient);
 
-		// TODO: chain check along a path
+		// TODO: chain checks along a lookup path
 	}
 } // namespace Chord

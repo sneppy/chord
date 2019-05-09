@@ -2,6 +2,7 @@
 #include "math/math.h"
 #include "hal/threading.h"
 #include "misc/command_line.h"
+#include "chord/chord.h"
 
 /// The global allocator used by default
 Malloc * gMalloc = nullptr;
@@ -11,20 +12,6 @@ ThreadManager * gThreadManager = nullptr;
 
 /// Global argument parser
 CommandLine * gCommandLine = nullptr;
-
-#include "chord/chord.h"
-
-template<typename T>
-typename EnableIf<IsIntegral<T>::value, T>::Type powi(T b, T e)
-{
-	if (e > 1)
-	{
-		T h = powi(b, (T)(e >> 1));
-		return e & 0x1 ? h * h * b : h * h;
-	}
-	else
-		return b;
-}
 
 int32 main(int32 argc, char ** argv)
 {
@@ -38,10 +25,6 @@ int32 main(int32 argc, char ** argv)
 	gCommandLine = new CommandLine(argc, argv);
 	
 	Chord::LocalNode localNode;
-
-	Net::SocketDgram socket;
-	socket.init();
-	socket.bind();
 
 	Net::Ipv4 peer;
 	if (CommandLine::get().getValue("input", peer, [](const String & str, Net::Ipv4 & peer){

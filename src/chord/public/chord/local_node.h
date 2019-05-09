@@ -73,8 +73,7 @@ namespace Chord
 		}
 
 		//////////////////////////////////////////////////
-		// Thread-sage setters
-		// TODO
+		// Thread-safe setters
 		//////////////////////////////////////////////////
 		
 		/// Set finger
@@ -167,7 +166,7 @@ namespace Chord
 		 * 
 		 * @param [in] peer node to remove
 		 */
-		void removePeer(const NodeInfo & other);
+		void removePeer(const NodeInfo & peer);
 
 		/**
 		 * Check peer node
@@ -204,7 +203,7 @@ namespace Chord
 		/// @}
 		
 	public:
-		/// Returns a string representation of the node
+		/// Prints node info to the std output
 		void printInfo() const
 		{
 			printf("# -----------------\n");
@@ -219,7 +218,7 @@ namespace Chord
 
 	protected:
 		/**
-		 * Returns whether number falls in range
+		 * Returns whether number falls in (circular) range or not
 		 * 
 		 * @param [in] n test variable
 		 * @param [in] a,b range delimiters
