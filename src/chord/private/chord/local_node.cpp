@@ -59,6 +59,29 @@ namespace Chord
 		return successor;
 	}
 
+	Request LocalNode::makeRequest(Request::Type type, const NodeInfo & recipient, RequestCallback::CallbackT onSuccess, RequestCallback::ErrorT onError, uint32 ttl)
+	{
+		Request out{type};
+		out.sender = self.addr;
+		out.recipient = recipient.addr;
+		out.flags = 0;
+		out.ttl = ttl;
+		out.hopCount = 0;
+
+		// Assign unique id
+		out.id = requestIdGenerator.getNext();
+
+		// Insert callback
+		if (onSuccess || onError)
+			callbacks.insert(out.id, RequestCallback(onSuccess, onError ? onError : [this, recipient]() {
+
+				// Check this peer
+				checkPeer(recipient);
+			}, 5.f));
+
+		return out;
+	}
+
 	bool LocalNode::join(const Ipv4 & peer)
 	{
 		// Join starts with a lookup request
@@ -96,7 +119,19 @@ namespace Chord
 
 			Request req = makeRequest(
 				Request::LOOKUP,
-				next
+				next,
+				[out](const Request & req) mutable {
+
+					out.set(req.getDst<NodeInfo>());
+				},
+				[this, out, next]() mutable {
+
+					// Key not found, something went wrong
+					out.set(NodeInfo{(uint32)-1, Ipv4::any});
+
+					// Check node
+					checkPeer(next);
+				}
 			);
 			req.setSrc<NodeInfo>(self);
 			req.setDst<uint32>(key);

@@ -54,6 +54,13 @@ namespace Chord
 
 		/// The index of the finger we'll update
 		uint32 nextFinger;
+
+		/// Mutex variables
+		/// @{
+		CriticalSection predecessorGuard;
+		CriticalSection fingersGuard[32];
+		CriticalSection callbacksGuard;
+		/// @}
 	
 	public:
 		/// Default constructor
@@ -73,17 +80,20 @@ namespace Chord
 		/// Set finger
 		FORCE_INLINE void setFinger(const NodeInfo & node, uint32 i)
 		{
+			ScopeLock _(fingersGuard + i);
 			fingers[i] = node;
 		}
 
 		/// Set successor
 		FORCE_INLINE void setSuccessor(const NodeInfo & node)
 		{
+			ScopeLock _(fingersGuard + 0U);
 			setFinger(node, 0);
 		}
 
 		FORCE_INLINE void setPredecessor(const NodeInfo & node)
 		{
+			ScopeLock _(&predecessorGuard);
 			predecessor = node;
 		}
 
@@ -107,28 +117,13 @@ namespace Chord
 		 * @param [in] recipient request target
 		 * @return forged request
 		 */
-		FORCE_INLINE Request makeRequest(Request::Type type, const NodeInfo & recipient, RequestCallback::CallbackT onSuccess = nullptr, RequestCallback::ErrorT onError = nullptr, uint32 ttl = (uint32)-1)
-		{
-			Request out{type};
-			out.sender = self.addr;
-			out.recipient = recipient.addr;
-			out.flags = 0;
-			out.ttl = ttl;
-			out.hopCount = 0;
-
-			// Assign unique id
-			out.id = requestIdGenerator.getNext();
-
-			// Insert callback
-			if (onSuccess || onError)
-				callbacks.insert(out.id, RequestCallback(onSuccess, onError ? onError : [this, recipient]() {
-
-					// Check this peer
-					checkPeer(recipient);
-				}, 5.f));
-
-			return out;
-		}
+		Request makeRequest(
+			Request::Type type,
+			const NodeInfo & recipient,
+			RequestCallback::CallbackT onSuccess = nullptr,
+			RequestCallback::ErrorT onError = nullptr,
+			uint32 ttl = (uint32)-1
+		);
 
 	public:
 		//////////////////////////////////////////////////
