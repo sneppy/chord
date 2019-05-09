@@ -17,7 +17,8 @@ namespace Chord
 			REPLY,
 			LOOKUP,
 			NOTIFY,
-			LEAVE
+			LEAVE,
+			CHECK
 		};
 		
 		/// Request type
@@ -124,19 +125,56 @@ namespace Chord
 	{
 	public:
 		/// Callback types
-		using CallbackT = Function<void(const Request&)>;
+		/// @{
+		using CallbackT	= Function<void(const Request&)>;
+		using ErrorT	= Function<void()>;
+		/// @}
 
 	public:
 		/// Success callback
-		CallbackT onSuccess;
+		const CallbackT onSuccess;
+
+		/// Error callback
+		const ErrorT onError;
+
+	protected:
+		/// Time to live
+		float32 ttl;
+
+		/// Request current age
+		float32 age;
 
 	public:
 		/// Default constructor
 		FORCE_INLINE RequestCallback()
-			: onSuccess(nullptr) {}
+			: onSuccess{nullptr}
+			, onError{nullptr}
+			, ttl{0.f}
+			, age{0.f} {}
 		
 		/// Callback constructor
-		explicit FORCE_INLINE RequestCallback(CallbackT _onSuccess)
-			: onSuccess{_onSuccess} {}
+		explicit FORCE_INLINE RequestCallback(CallbackT _onSuccess, ErrorT _onError = nullptr, float32 _ttl = 2.f)
+			: onSuccess{_onSuccess}
+			, onError{_onError}
+			, ttl{_ttl}
+			, age{0.f} {}
+
+		/**
+		 * Tick request
+		 * 
+		 * @param [in] dt time elapsed from last tick
+		 * @return true if request has expired
+		 */
+		FORCE_INLINE bool tick(float32 dt)
+		{
+			age += dt;
+			if (ttl > 0.f && age > ttl)
+			{
+				age -= ttl;
+				return true;
+			}
+
+			return false;
+		}
 	};
 } // Chord

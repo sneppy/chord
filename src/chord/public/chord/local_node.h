@@ -107,11 +107,11 @@ namespace Chord
 		 * @param [in] recipient request target
 		 * @return forged request
 		 */
-		FORCE_INLINE Request makeRequest(Request::Type type, Ipv4 recipient, RequestCallback::CallbackT onSuccess = nullptr, uint32 ttl = (uint32)-1)
+		FORCE_INLINE Request makeRequest(Request::Type type, const NodeInfo & recipient, RequestCallback::CallbackT onSuccess = nullptr, RequestCallback::ErrorT onError = nullptr, uint32 ttl = (uint32)-1)
 		{
 			Request out{type};
 			out.sender = self.addr;
-			out.recipient = recipient;
+			out.recipient = recipient.addr;
 			out.flags = 0;
 			out.ttl = ttl;
 			out.hopCount = 0;
@@ -120,7 +120,12 @@ namespace Chord
 			out.id = requestIdGenerator.getNext();
 
 			// Insert callback
-			if (onSuccess) callbacks.insert(out.id, RequestCallback(onSuccess));
+			if (onSuccess || onError)
+				callbacks.insert(out.id, RequestCallback(onSuccess, onError ? onError : [this, recipient]() {
+
+					// Check this peer
+					checkPeer(recipient);
+				}, 5.f));
 
 			return out;
 		}
@@ -158,45 +163,50 @@ namespace Chord
 		void stabilize();
 
 		/**
-		 * Fix fingers
+		 * Fix current next finger
 		 */
 		void fixFingers();
 
+		/**
+		 * Remove remote node from the local view
+		 * 
+		 * @param [in] peer node to remove
+		 */
+		void removePeer(const NodeInfo & other);
+
+		/**
+		 * Check peer node
+		 * 
+		 * @param [in] peer chord node to check
+		 */
+		void checkPeer(const NodeInfo & peer);
+
+		/**
+		 * Check predecessor to ensure it is still alive
+		 */
+		void checkPredecessor();
+
+		/**
+		 * Check expired requests
+		 * 
+		 * @param [in] dt delta time from last check
+		 */
+		void checkRequests(float32 dt);
+
 	protected:
 		/**
-		 * Process incoming requests
+		 * Process incoming request
 		 * 
 		 * @param [in] req incoming request
+		 * @{
 		 */
 		void handleRequest(const Request & req);
-
-		/**
-		 * Process reply request
-		 * 
-		 * @param [in] req incoming reply request
-		 */
 		void handleReply(const Request & req);
-		
-		/**
-		 * Process lookup request
-		 * 
-		 * @param [in] req incoming lookup request
-		 */
 		void handleLookup(const Request & req);
-
-		/**
-		 * Process notify request
-		 * 
-		 * @param [in] req incoming notify request
-		 */
 		void handleNotify(const Request & req);
-
-		/**
-		 * Process leave request
-		 * 
-		 * @param [in] req incoming leave request
-		 */
 		void handleLeave(const Request & req);
+		void handleCheck(const Request & req);
+		/// @}
 		
 	public:
 		/// Returns a string representation of the node

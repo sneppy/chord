@@ -24,9 +24,14 @@ namespace Chord
 			const float32 dt = ((currTick = clock()) - prevTick) / (float32)CLOCKS_PER_SEC;
 			prevTick = currTick;
 
+			const float32 delta = updateTimer.getDelta();
 			if (updateTimer.tick(dt))
-				node->stabilize(),
+			{
+				node->stabilize();
 				node->fixFingers();
+				node->checkPredecessor();
+				node->checkRequests(delta);
+			}
 		}
 	}
 } // namespace Chord

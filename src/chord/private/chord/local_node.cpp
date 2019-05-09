@@ -64,7 +64,7 @@ namespace Chord
 		// Join starts with a lookup request
 		Request req = makeRequest(
 			Request::LOOKUP,
-			peer
+			NodeInfo{(uint32)-1, peer}
 		);
 		req.setSrc<NodeInfo>(self);
 		req.setDst<uint32>(id);
@@ -96,7 +96,7 @@ namespace Chord
 
 			Request req = makeRequest(
 				Request::LOOKUP,
-				next.addr
+				next
 			);
 			req.setSrc<NodeInfo>(self);
 			req.setDst<uint32>(key);
@@ -136,7 +136,7 @@ namespace Chord
 		// it
 		Request req = makeRequest(
 			Request::NOTIFY,
-			successor.addr,
+			successor,
 			[this](const Request & req) {
 				
 				const NodeInfo & target = req.getDst<NodeInfo>();
@@ -178,7 +178,7 @@ namespace Chord
 
 			Request req = makeRequest(
 				Request::LOOKUP,
-				next.addr,
+				next,
 				[this, i](const Request & req) {
 
 					// Update finger
@@ -196,6 +196,87 @@ namespace Chord
 
 		// Next finger
 		nextFinger = ++nextFinger == 32U ? 1U : nextFinger;
+	}
+
+	void LocalNode::removePeer(const NodeInfo & peer)
+	{
+		if (peer.id == predecessor.id)
+			// Set predecessor to NIL
+			setPredecessor(self);
+		
+		if (peer.id == successor.id)
+		{
+			// ! I don't think this actually works
+
+			// Reset successor temporarily
+			setSuccessor(self);
+
+			// Do lookup on predecessor
+			Request req = makeRequest(
+				Request::LOOKUP,
+				predecessor,
+				[this](const Request & req) {
+					
+					setSuccessor(req.getDst<NodeInfo>());
+
+					printf("LOG: new successor is %s\n", *successor.getInfoString());
+				}
+			);
+			req.setDst<uint32>(id + 1);
+
+			socket.write<Request>(req, req.recipient);
+		}
+
+		for (uint32 i = 1; i < 32; ++i)
+			if (peer.id == fingers[i].id)
+				// Unset finger
+				setFinger(self, i);
+		
+		printf("LOG: removed node %s from local view\n", *peer.getInfoString());
+	}
+
+	void LocalNode::checkPeer(const NodeInfo & peer)
+	{
+		Request req = makeRequest(
+			Request::CHECK,
+			peer,
+			nullptr,
+			[this, peer]() {
+
+				removePeer(peer);
+			}
+		);
+		req.setSrc<NodeInfo>(self);
+
+		// Send request
+		socket.write<Request>(req, req.recipient);
+	}
+
+	void LocalNode::checkPredecessor()
+	{
+		// Check predecessor
+		checkPeer(predecessor);
+	}
+
+	void LocalNode::checkRequests(float32 dt)
+	{
+		for (auto it = callbacks.begin(); it != callbacks.end(); ++it)
+		{
+			auto id			= it->first;
+			auto & callback	= it->second;
+			if (callback.tick(dt))
+			{
+				// Execute error callback
+				if (callback.onError) callback.onError();
+
+				// Remove expired callback
+				callbacks.remove(it);
+
+				printf("LOG: no reply received for request with id %08x\n", id);
+			}
+		}
+
+		printf("LOG: %u pending requests\n", callbacks.getCount());
 	}
 
 	void LocalNode::handleRequest(const Request & req)
@@ -228,19 +309,28 @@ namespace Chord
 			handleLeave(req);
 			break;
 		
+		case Request::CHECK:
+			printf("LOG: received CHECK from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			handleCheck(req);
+			break;
+		
 		default:
+			printf("LOG: received UNKOWN from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			break;
 		}
 	}
 
 	void LocalNode::handleReply(const Request & req)
 	{
-		auto callbackIt = callbacks.find(req.id);
-		if (callbackIt != callbacks.nil())
+		auto it = callbacks.find(req.id);
+		if (it != callbacks.nil())
 		{
 			// Execute callback
-			auto callback = callbackIt->second;
-			callback.onSuccess(req);
+			auto callback = it->second;
+			if (callback.onSuccess) callback.onSuccess(req);
+
+			// Remove
+			callbacks.remove(it);
 		}
 	}
 
@@ -317,38 +407,22 @@ namespace Chord
 
 	void LocalNode::handleLeave(const Request & req)
 	{
+		// Remove leaving node from local view
+		removePeer(req.getSrc<NodeInfo>());
+	}
+
+	void LocalNode::handleCheck(const Request & req)
+	{
+		// Reply back if we are still alive (I guess we are!)
 		const NodeInfo & src = req.getSrc<NodeInfo>();
 
-		if (src.id == predecessor.id)
-			// Set predecessor to NIL
-			setPredecessor(self);
-		
-		if (src.id == successor.id)
-		{
-			// Reset successor temporarily
-			setSuccessor(self);
+		Request res{req};
+		res.type = Request::REPLY;
+		res.sender = self.addr;
+		res.recipient = src.addr;
 
-			// Do lookup on predecessor
-			Request req = makeRequest(
-				Request::LOOKUP,
-				predecessor.addr,
-				[this](const Request & req) {
-					
-					setSuccessor(req.getDst<NodeInfo>());
+		socket.write<Request>(res, res.recipient);
 
-					printf("LOG: new successor is %s\n", *successor.getInfoString());
-				}
-			);
-			req.setDst<uint32>(id + 1);
-
-			socket.write<Request>(req, req.recipient);
-		}
-
-		for (uint32 i = 1; i < 32; ++i)
-			if (src.id == fingers[i].id)
-				// Unset finger
-				setFinger(self, i);
-
-		printf("LOG: node %s is leaving\n", *src.getInfoString());
+		// TODO: chain check along a path
 	}
 } // namespace Chord

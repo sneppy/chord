@@ -35,6 +35,18 @@ public:
 		while (delta > interval) delta -= interval;
 	}
 
+	/// Returns current delta time
+	FORCE_INLINE float32 getDelta() const
+	{
+		return delta;
+	}
+
+	/// Returns total elapsed time
+	FORCE_INLINE float32 getElapsed() const
+	{
+		return elapsed;
+	}
+
 	/**
 	 * Tick timer
 	 * 
