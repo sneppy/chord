@@ -16,7 +16,6 @@ CommandLine * gCommandLine = nullptr;
 
 int32 main(int32 argc, char ** argv)
 {
-	const uint32 f = (uint32)0xc6000000 + (uint32)(1U << 31U);
 	//////////////////////////////////////////////////
 	// Application setup
 	//////////////////////////////////////////////////
@@ -41,7 +40,22 @@ int32 main(int32 argc, char ** argv)
 	auto receiver = RunnableThread::create(new Chord::ReceiveTask(&localNode), "Receiver");
 	auto updater = RunnableThread::create(new Chord::UpdateTask(&localNode), "Updater");
 
-	while(1) getc(stdin), localNode.printInfo();
+	char c; do
+	{
+		switch (c = getc(stdin))
+		{
+		case 'p':
+			localNode.printInfo();
+			break;
+		
+		case 'q':
+			localNode.leave();
+			break;
+
+		default:
+			break;
+		}
+	} while(c != 'q');
 
 	return 0;
 }

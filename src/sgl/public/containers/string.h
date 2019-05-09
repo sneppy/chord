@@ -41,6 +41,14 @@ public:
 		}
 	}
 
+	/// Copy constructor
+	FORCE_INLINE String(const String & other)
+		: data(other.data.count + 1)
+	{
+		// Copy content
+		PlatformMemory::memcpy(data.buffer, other.data.buffer, (data.count = other.data.count) + 1);
+	}
+
 	/// Provides access to underying data
 	/// @{
 	FORCE_INLINE ansichar *			operator*()			{ return data.buffer; }

@@ -146,6 +146,11 @@ namespace Chord
 		 */
 		Promise<NodeInfo> lookup(uint32 key);
 
+		/**
+		 * Leave chord ring
+		 */
+		void leave();
+
 	protected:
 		/**
 		 * Stabilize node and notify successor
@@ -185,6 +190,13 @@ namespace Chord
 		 * @param [in] req incoming notify request
 		 */
 		void handleNotify(const Request & req);
+
+		/**
+		 * Process leave request
+		 * 
+		 * @param [in] req incoming leave request
+		 */
+		void handleLeave(const Request & req);
 		
 	public:
 		/// Returns a string representation of the node

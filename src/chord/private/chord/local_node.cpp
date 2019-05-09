@@ -22,8 +22,10 @@ namespace Chord
 		if (socket.init() && socket.bind())
 		{
 			// Get node public address
-			// TODO: not from socket
+			// TODO: depending on are visibility
+			// Fallback to socket binding address
 			self.addr = socket.getAddress();
+			getInterfaceAddr(self.addr);
 
 			{
 				// Compute sha-1 of address
@@ -50,8 +52,8 @@ namespace Chord
 	{
 		const uint32 offset = key - id;
 
-		for (uint32 i = /* Math::getP2Index(offset, 32) */31; i > 0; --i)
-			if (rangeOpen(fingers[i].id, id, key)/* fingers[i].id != id */) return fingers[i];
+		for (uint32 i = Math::getP2Index(offset, 32); i > 0; --i)
+			if (rangeOpen(fingers[i].id, id, key)) return fingers[i];
 		
 		// Return successor if all other fingers failed
 		return successor;
@@ -106,6 +108,25 @@ namespace Chord
 		return out;
 	}
 
+	void LocalNode::leave()
+	{
+		Request req{Request::LEAVE};
+		req.sender = self.addr;
+		req.setSrc<NodeInfo>(self);
+
+		// Send to successor
+		{
+			req.recipient = successor.addr;
+			socket.write<Request>(req, req.recipient);
+		}
+
+		// Send to predecessor
+		{
+			req.recipient = predecessor.addr;
+			socket.write<Request>(req, req.recipient);
+		}
+	}
+
 	void LocalNode::stabilize()
 	{
 		// This op is slightly different from
@@ -158,7 +179,7 @@ namespace Chord
 			Request req = makeRequest(
 				Request::LOOKUP,
 				next.addr,
-				[this, i](const Request & req){
+				[this, i](const Request & req) {
 
 					// Update finger
 					setFinger(req.getDst<NodeInfo>(), i);
@@ -204,6 +225,7 @@ namespace Chord
 
 		case Request::LEAVE:
 			printf("LOG: received LEAVE from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			handleLeave(req);
 			break;
 		
 		default:
@@ -291,5 +313,42 @@ namespace Chord
 
 			printf("LOG: new predecessor is %s\n", *predecessor.getInfoString());
 		}
+	}
+
+	void LocalNode::handleLeave(const Request & req)
+	{
+		const NodeInfo & src = req.getSrc<NodeInfo>();
+
+		if (src.id == predecessor.id)
+			// Set predecessor to NIL
+			setPredecessor(self);
+		
+		if (src.id == successor.id)
+		{
+			// Reset successor temporarily
+			setSuccessor(self);
+
+			// Do lookup on predecessor
+			Request req = makeRequest(
+				Request::LOOKUP,
+				predecessor.addr,
+				[this](const Request & req) {
+					
+					setSuccessor(req.getDst<NodeInfo>());
+
+					printf("LOG: new successor is %s\n", *successor.getInfoString());
+				}
+			);
+			req.setDst<uint32>(id + 1);
+
+			socket.write<Request>(req, req.recipient);
+		}
+
+		for (uint32 i = 1; i < 32; ++i)
+			if (src.id == fingers[i].id)
+				// Unset finger
+				setFinger(self, i);
+
+		printf("LOG: node %s is leaving\n", *src.getInfoString());
 	}
 } // namespace Chord
