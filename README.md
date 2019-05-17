@@ -5,6 +5,7 @@ C++ implementation of the [Chord protocol](https://pdos.csail.mit.edu/papers/ton
 Contributors:
 
 - Andrea Mecchia @ [sneppy](https://github.com/sneppy)
+- Lorenzo Pratissoli @ [lpraat](https://github.com/lpraat)
 
 ## Usage
 

@@ -23,7 +23,25 @@ namespace Net
 	public:
 		/// Default constructor
 		FORCE_INLINE SocketDgram()
-			: sockfd(-1) {}
+			: sockfd{-1} {}
+		
+		/// Move constructor
+		FORCE_INLINE SocketDgram(SocketDgram && other)
+			: sockfd{other.sockfd}
+		{
+			other.sockfd = -1;
+		}
+
+		/// Move assignment
+		FORCE_INLINE SocketDgram & operator=(SocketDgram && other)
+		{
+			// Close any active connection
+			if (sockfd != -1) ::close(sockfd);
+
+			// Move socket file descriptor
+			sockfd = other.sockfd;
+			other.sockfd = -1;
+		}
 
 		/// Destructor
 		FORCE_INLINE ~SocketDgram()
@@ -59,10 +77,10 @@ namespace Net
 		/// Initialize socket
 		FORCE_INLINE bool init()
 		{
-			if (sockfd < 0) sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
+			if (sockfd == -1) sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
 
 			// Return true if socket is initialized
-			return sockfd >= 0;
+			return sockfd != -1;
 		}
 
 		/**
