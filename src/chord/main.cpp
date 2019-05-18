@@ -85,7 +85,5 @@ int32 main(int32 argc, char ** argv)
 		}
 	} while(c != 'q');
 
-	delete[] line;
-
 	return 0;
 }

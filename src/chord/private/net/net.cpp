@@ -201,13 +201,19 @@ namespace Net
 	template<>
 	bool SocketStream::read<String>(String & data)
 	{
-		readArray(data.getArray());
-		// ? terminate string ?
+		auto & arr = data.getArray();
+		if (read(arr))
+		{
+			arr[arr.getCount()] = '\0';
+			return true;
+		}
+
+		return false;
 	}
 
 	template<>
 	bool SocketStream::write<String>(const String & data)
 	{
-		writeArray(data.getArray());
+		return write(data.getArray());
 	}
 } // namespace Net

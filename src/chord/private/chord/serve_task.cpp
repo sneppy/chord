@@ -10,21 +10,40 @@ namespace Chord
 	
 	void ServeTask::lookup()
 	{
-		String key("sneppy");
-		client.read(key);
-
-		// Compute key hash
-		uint32 k;
-		{
-			uint32 hash[5];
-			Crypto::sha1(key, hash);
-			k = *hash;
-		}
-
-		auto result = node->lookup(k).get();
+		uint32 key; client.read(key);
+		auto result = node->lookup(key).get();
 		client.write<NodeInfo>(result);
 
-		printf("LOG: found key '%s' (with hash %u) @ %s\n", *key, k, *result.getInfoString());
+		printf("LOG: found key #%u @ %s\n", key, *result.getInfoString());
+	}
+
+	void ServeTask::retrieve()
+	{
+		// Retrieve filename from client
+		String filename;
+		client.read(filename);
+
+		printf("LOG: client @ %s requested file '%s'\n", *getIpString(client.getAddress()), *filename);
+
+		// TODO: file manager
+		{
+			const String path = String("data/") + filename;
+			FILE * fp = fopen(*path, "rb");
+
+			if (fp)
+			{
+				fseek(fp, 0, SEEK_END);
+				uint64 len = ftell(fp);
+				fseek(fp, 0, SEEK_SET);
+
+				Array<ubyte> payload(len, len);
+				fread(*payload, 1, len, fp);
+
+				fclose(fp);
+
+				client.write(payload);
+			}
+		}
 	}
 	
 	bool ServeTask::init()
@@ -52,10 +71,11 @@ namespace Chord
 					break;
 				
 				case 2:
-					printf("kek\n");
+					retrieve();
 					break;
 				
 				default:
+					printf("LOG: unkown command received from client @ %s\n", *getIpString(client.getAddress()));
 					break;
 				}
 			}

@@ -158,21 +158,22 @@ namespace Net
 			return ::recv(sockfd, buffer, len, flags);
 		}
 
-		template<typename T>
-		FORCE_INLINE bool read(T & data)
-		{
-			return read((void*)&data, (sizet)sizeof(T), MSG_WAITALL) == sizeof(T);
-		}
-
 		template<typename T, typename AllocT = MallocAnsi>
-		FORCE_INLINE bool readArray(Array<T, AllocT> & arr)
+		FORCE_INLINE bool read(Array<T, AllocT> & arr)
 		{
 			// Get number of elements
 			uint64 len; read(len);
+			arr.resize(len + 1);
 			arr.emplace(len);
 
 			// Read data
 			return len && read((void*)*arr, arr.getBytes(), MSG_WAITALL) == arr.getBytes();
+		}
+
+		template<typename T>
+		FORCE_INLINE bool read(T & data)
+		{
+			return read((void*)&data, (sizet)sizeof(T), MSG_WAITALL) == sizeof(T);
 		}
 		/// @}
 
@@ -190,21 +191,23 @@ namespace Net
 			return ::send(sockfd, buffer, len, flags);
 		}
 
-		template<typename T>
-		FORCE_INLINE bool write(typename ConstRef<T>::Type data)
-		{
-			return write((const void*)&data, (sizet)sizeof(T), 0) == sizeof(T);
-		}
-
 		template<typename T, typename AllocT = MallocAnsi>
-		FORCE_INLINE bool writeArray(const Array<T, AllocT> & arr)
+		FORCE_INLINE bool write(const Array<T, AllocT> & arr)
 		{
 			// Write number of elements
 			write<uint64>(arr.getCount());
 
+			printf("JSS\n");
+
 			// Write data
 			const sizet len = arr.getBytes();
 			return write((const void*)*arr, arr.getBytes(), 0) == len;
+		}
+
+		template<typename T>
+		FORCE_INLINE bool write(typename ConstRef<T>::Type data)
+		{
+			return write((const void*)&data, (sizet)sizeof(T), 0) == sizeof(T);
 		}
 		/// @}
 	};

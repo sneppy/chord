@@ -4,6 +4,9 @@
 temp
 temp.*
 
+# Local data files
+/data/
+
 # Binaries --------------------------------------
 /bin/
 /dist/

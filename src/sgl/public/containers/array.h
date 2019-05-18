@@ -40,12 +40,12 @@ protected:
 
 public:
 	/// Default constructor
-	explicit FORCE_INLINE Array(uint64 _size = 2, AllocT * _allocator = reinterpret_cast<AllocT*>(gMalloc)) :
+	explicit FORCE_INLINE Array(uint64 _size = 2, uint64 _count = 0, AllocT * _allocator = reinterpret_cast<AllocT*>(gMalloc)) :
 		allocator(_allocator),
 		bHasOwnAllocator(_allocator == nullptr),
 		buffer(nullptr),
-		size(_size ? _size : 2),
-		count(0U)
+		size(_size),
+		count(_count > _size ? _size : _count)
 	{
 		// Create a default allocator
 		if (allocator == nullptr)

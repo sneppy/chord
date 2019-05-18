@@ -34,6 +34,11 @@ namespace Chord
 		 */
 		void lookup();
 
+		/**
+		 * Retrieve a file from this service
+		 */
+		void retrieve();
+
 		//////////////////////////////////////////////////
 		// Runnable interface
 		//////////////////////////////////////////////////
