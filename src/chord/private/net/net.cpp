@@ -1,4 +1,5 @@
 #include "net/types.h"
+#include "net/socket_stream.h"
 
 namespace Net
 {
@@ -191,5 +192,22 @@ namespace Net
 
 		delete hint;
 		return out;
+	}
+
+	//////////////////////////////////////////////////
+	// Sockets
+	//////////////////////////////////////////////////
+	
+	template<>
+	bool SocketStream::read<String>(String & data)
+	{
+		readArray(data.getArray());
+		// ? terminate string ?
+	}
+
+	template<>
+	bool SocketStream::write<String>(const String & data)
+	{
+		writeArray(data.getArray());
 	}
 } // namespace Net

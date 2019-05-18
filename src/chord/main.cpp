@@ -13,6 +13,23 @@ ThreadManager * gThreadManager = nullptr;
 /// Global argument parser
 CommandLine * gCommandLine = nullptr;
 
+class Receiver : public Runnable
+{
+	Net::SocketStream client;
+
+public:
+	Receiver(Net::SocketStream && socket)
+		: client{move(socket)} {}
+
+	virtual bool init() override { return true; }
+	virtual int32 run() override
+	{
+		char line[1024] = {};
+		while (client.read(line, 1024) > 0)
+			printf("%s -> %s\n", *Net::getIpString(client.getAddress()), line);
+	}
+};
+
 int32 main(int32 argc, char ** argv)
 {
 	//////////////////////////////////////////////////
@@ -34,6 +51,7 @@ int32 main(int32 argc, char ** argv)
 
 	auto receiver = RunnableThread::create(new Chord::ReceiveTask(&localNode), "Receiver");
 	auto updater = RunnableThread::create(new Chord::UpdateTask(&localNode), "Updater");
+	auto listener = RunnableThread::create(new Chord::ListenTask(&localNode), "Listener");
 
 	char line[256] = {};
 	char c; do

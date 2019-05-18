@@ -49,6 +49,36 @@ namespace Net
 		{
 			port = htons(_port);
 		}
+
+		/**
+		 * Compare two addresses
+		 * 
+		 * @param [in] other second operand
+		 * @return < 0, == 0 or > 0
+		 */
+		FORCE_INLINE int32 compare(const Ipv4 & other) const
+		{
+			return
+				2 * (int32(host > other.host) - int32(host < other.host)) +
+				1 * (int32(port > other.port) - int32(port < other.port));
+		}
+
+		/**
+		 * Compare two addresses
+		 * 
+		 * @param [in] other second operand
+		 * @return boolean result
+		 * @{
+		 */
+		FORCE_INLINE bool operator==(const Ipv4 & other) const
+		{
+			return host == other.host && port == other.port;
+		}
+		FORCE_INLINE bool operator!=(const Ipv4 & other) const
+		{
+			return !operator==(other);
+		}
+		/// @}
 	};
 
 	union Ipv6
