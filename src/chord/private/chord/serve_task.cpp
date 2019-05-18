@@ -17,6 +17,41 @@ namespace Chord
 		printf("LOG: found key #%u @ %s\n", key, *result.getInfoString());
 	}
 
+	void ServeTask::upload()
+	{
+		// Read filename
+		String filename;
+		client.read(filename);
+
+		// Check hash of file
+		{
+			uint32 hash[5];
+			Crypto::sha1(filename, hash);
+			// TODO
+		}
+
+		// Read content
+		// * Note: if request exceed a maximum
+		// * size, server could crash. Implement
+		// * a safety check (e.g. 512 MB max size)
+		Array<ubyte> data;
+		client.read(data);
+
+		printf("LOG: client @ %s wants to upload '%s' (%.2f KB)\n", *getIpString(client.getAddress()), *filename, data.getBytes() / 1024.f);
+
+		// TODO: file manager
+		{
+			const String path = String("data/") + filename;
+			FILE * fp = fopen(*path, "wb");
+
+			if (fp)
+			{
+				fwrite(*data, 1, data.getBytes(), fp);
+				fclose(fp);
+			}
+		}
+	}
+
 	void ServeTask::retrieve()
 	{
 		// Retrieve filename from client
@@ -67,7 +102,7 @@ namespace Chord
 					break;
 				
 				case 1:
-					printf("It's a me, Mario!\n");
+					upload();
 					break;
 				
 				case 2:

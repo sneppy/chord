@@ -35,6 +35,11 @@ namespace Chord
 		void lookup();
 
 		/**
+		 * Upload a new file on this node
+		 */
+		void upload();
+
+		/**
 		 * Retrieve a file from this service
 		 */
 		void retrieve();
