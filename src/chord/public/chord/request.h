@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chord_fwd.h"
+#include "templates/reference.h"
 
 namespace Chord
 {
@@ -153,9 +154,9 @@ namespace Chord
 			, age{0.f} {}
 		
 		/// Callback constructor
-		explicit FORCE_INLINE RequestCallback(CallbackT _onSuccess, ErrorT _onError = nullptr, float32 _ttl = 2.f)
-			: onSuccess{_onSuccess}
-			, onError{_onError}
+		explicit FORCE_INLINE RequestCallback(CallbackT && _onSuccess, ErrorT && _onError = nullptr, float32 _ttl = 2.f)
+			: onSuccess{::move(_onSuccess)}
+			, onError{::move(_onError)}
 			, ttl{_ttl}
 			, age{0.f} {}
 

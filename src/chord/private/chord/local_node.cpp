@@ -59,7 +59,7 @@ namespace Chord
 		return successor;
 	}
 
-	Request LocalNode::makeRequest(Request::Type type, const NodeInfo & recipient, RequestCallback::CallbackT onSuccess, RequestCallback::ErrorT onError, uint32 ttl)
+	Request LocalNode::makeRequest(Request::Type type, const NodeInfo & recipient, RequestCallback::CallbackT && onSuccess, RequestCallback::ErrorT && onError, uint32 ttl)
 	{
 		Request out{type};
 		out.sender = self.addr;
@@ -75,7 +75,7 @@ namespace Chord
 		if (onSuccess || onError)
 		{
 			ScopeLock _(&callbacksGuard);
-			callbacks.insert(out.id, RequestCallback(onSuccess, onError ? onError : [this, recipient]() {
+			callbacks.insert(out.id, RequestCallback(::move(onSuccess), onError ? ::move(onError) : [this, recipient]() {
 
 				// Check this peer
 				checkPeer(recipient);
@@ -107,6 +107,8 @@ namespace Chord
 		successor = res.getDst<NodeInfo>();
 
 		printf("INFO: connected with successor %s\n", *successor.getInfoString());
+		
+		return true;
 	}
 
 	Promise<NodeInfo> LocalNode::lookup(uint32 key)
