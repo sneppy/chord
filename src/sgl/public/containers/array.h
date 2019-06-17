@@ -104,6 +104,8 @@ public:
 		// Copy content
 		count = other.count;
 		moveOrCopy(buffer, other.buffer, count);
+
+		return *this;
 	}
 
 	/// Copy assignment with different allocator type

@@ -56,10 +56,16 @@ struct UnixPlatformTLS : public GenericPlatformTLS
 	 * 
 	 * @return retrieved value
 	 */
-	static FORCE_INLINE void * getValue(uint32 slot) { pthread_getspecific(static_cast<pthread_key_t>(slot)); }
+	static FORCE_INLINE void * getValue(uint32 slot)
+	{
+		return pthread_getspecific(static_cast<pthread_key_t>(slot));
+	}
 
 	/// @brief Clears slot
-	static FORCE_INLINE void clear(uint32 slot) { pthread_key_delete(static_cast<pthread_key_t>(slot)); }
+	static FORCE_INLINE void clear(uint32 slot)
+	{
+		pthread_key_delete(static_cast<pthread_key_t>(slot));
+	}
 };
 
 typedef UnixPlatformTLS PlatformTLS;

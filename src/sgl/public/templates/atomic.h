@@ -27,6 +27,10 @@ public:
 			
 			case AtomicOrder::Relaxed:
 				return PlatformAtomics::readRelaxed(&obj);
+
+			default:
+				// ! Invalid order type
+				return 0;
 		}
 	}
 

@@ -119,8 +119,8 @@ namespace Chord
 		Request makeRequest(
 			Request::Type type,
 			const NodeInfo & recipient,
-			RequestCallback::CallbackT onSuccess = nullptr,
-			RequestCallback::ErrorT onError = nullptr,
+			RequestCallback::CallbackT && onSuccess = nullptr,
+			RequestCallback::ErrorT && onError = nullptr,
 			uint32 ttl = (uint32)-1
 		);
 
