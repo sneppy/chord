@@ -36,6 +36,8 @@ namespace Net
 			// Move socket descriptor
 			sockfd = other.sockfd;
 			other.sockfd = -1;
+
+			return *this;
 		}
 
 		/// Destructor
@@ -196,8 +198,6 @@ namespace Net
 		{
 			// Write number of elements
 			write<uint64>(arr.getCount());
-
-			printf("JSS\n");
 
 			// Write data
 			const sizet len = arr.getBytes();

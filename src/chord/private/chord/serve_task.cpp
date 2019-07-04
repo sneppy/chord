@@ -31,9 +31,9 @@ namespace Chord
 		}
 
 		// Read content
-		// * Note: if request exceed a maximum
-		// * size, server could crash. Implement
-		// * a safety check (e.g. 512 MB max size)
+		// ! Note: if request exceeds a maximum
+		// ! size, server could crash. Implement
+		// ! a safety check (e.g. 512 MB max size)
 		Array<ubyte> data;
 		client.read(data);
 

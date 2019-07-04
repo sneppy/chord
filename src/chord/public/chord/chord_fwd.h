@@ -19,6 +19,7 @@ namespace Chord
 	class UpdateTask;
 	class ListenTask;
 	class ServeTask;
+	class Client;
 } // namespace Chord
 
 #include "types.h"

@@ -74,7 +74,9 @@ protected:
 		ThreadManager::getPtr()->add(self->getThreadId(), self);
 
 		// Thread life-cycle
-		self->preRun(), self->run(), self->postRun();
+		self->preRun();
+		self->run();
+		self->postRun();
 
 		// Exit silently
 		pthread_exit(nullptr);

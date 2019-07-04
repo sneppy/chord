@@ -48,10 +48,7 @@ namespace Chord
 		// Runnable interface
 		//////////////////////////////////////////////////
 		
-		/// @copydoc Runnable::init
 		virtual bool init() override;
-
-		/// @copydoc Runnable::run
 		virtual int32 run() override;
 	};
 } // namespace Chord

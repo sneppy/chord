@@ -18,7 +18,7 @@ set(VERSION_PATCH 0) # Not really using it
 ## Build type config
 set(CMAKE_CXX_FLAGS_DEBUG			"-DSGL_BUILD_DEBUG=1 -DBUILD_DEBUG=1 -ggdb -O0")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO	"-DSGL_BUILD_DEVELOPMENT=1 -DBUILD_DEVELOPMENT=1 -ggdb -O1 -foptimize-sibling-calls")
-set(CMAKE_CXX_FLAGS_RELEASE			"-DSGL_BUILD_RELEASE=1 -DBUILD_RELEASE=1 -Ofast")
+set(CMAKE_CXX_FLAGS_RELEASE			"-DSGL_BUILD_RELEASE=1 -DBUILD_RELEASE=1 -Ofast -fno-tree-slp-vectorize")
 
 # Compiler setup --------------------------------
 ## CXX preferences

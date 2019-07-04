@@ -12,3 +12,4 @@
 #include "update_task.h"
 #include "listen_task.h"
 #include "serve_task.h"
+#include "client.h"

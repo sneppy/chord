@@ -155,8 +155,8 @@ public:
 	/// Destructor
 	FORCE_INLINE ~Array()
 	{
-		//if (buffer)
-			//allocator->free(buffer);
+		if (buffer)
+			allocator->free(buffer);
 		
 		if (bHasOwnAllocator)
 			delete allocator;

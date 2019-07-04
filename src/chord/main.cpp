@@ -13,22 +13,105 @@ ThreadManager * gThreadManager = nullptr;
 /// Global argument parser
 CommandLine * gCommandLine = nullptr;
 
-class Receiver : public Runnable
+//////////////////////////////////////////////////
+// Helper functions
+//////////////////////////////////////////////////
+
+/**
+ * Create server
+ */
+static FORCE_INLINE int32 createServer()
 {
-	Net::SocketStream client;
+	using namespace Chord;
+	using namespace Net;
 
-public:
-	Receiver(Net::SocketStream && socket)
-		: client{move(socket)} {}
+	LocalNode * localNode = new LocalNode;
 
-	virtual bool init() override { return true; }
-	virtual int32 run() override
+	Ipv4 peer;
+	if (CommandLine::get().getValue("input", peer, [](const String & str, Net::Ipv4 & peer) {
+
+		Net::parseIpString(peer, *str);
+	}))
+		localNode->join(peer); // Join existing ring
+	else
+		; // Create new ring
+
+	// Bootstrap tasks
+	auto receiver = RunnableThread::create(new ReceiveTask(localNode), "Listener");
+	auto updater = RunnableThread::create(new UpdateTask(localNode), "Listener");
+	auto listener = RunnableThread::create(new ListenTask(localNode), "Listener");
+
+#if BUILD_DEBUG
+	char line[256] = {};
+	char c; do
 	{
-		char line[1024] = {};
-		while (client.read(line, 1024) > 0)
-			printf("%s -> %s\n", *Net::getIpString(client.getAddress()), line);
+		switch (c = getc(stdin))
+		{
+		case 'q':
+			// Leave gracefully
+			localNode->leave();
+			break;
+
+		case 'p':
+			// Print info about the local node
+			localNode->printInfo();
+			break;
+
+		case 'l':
+		{
+			// Retrieve key owner
+			uint32 key;
+
+			fprintf(stdout, "> ");
+			fscanf(stdin, "%u", &key);
+
+			auto peer = localNode->lookup(key);
+			printf("RESULT: found key 0x%08x @ [%s]\n", key, *peer.get().getInfoString());
+
+			break;
+		}
+		
+		default:
+			break;
+		}
+	} while (c != 'q');
+#endif
+
+	// Disconnect clients
+	delete listener;
+
+	// Disconnect from network
+	localNode->leave();
+
+	// Shutdown tasks
+	delete updater;
+	delete receiver;
+
+	delete localNode;
+
+	return 0;
+}
+
+/**
+ * Create client
+ */
+static FORCE_INLINE int32 createClient()
+{
+	using namespace Chord;
+	using namespace Net;
+
+	Ipv4 peer;
+	if (CommandLine::get().getValue("input", peer, [](const String & str, Net::Ipv4 & peer) {
+
+		Net::parseIpString(peer, *str);
+	}))
+	{
+		auto client = RunnableThread::create(new Client(peer), "Client");
+		if (client) delete client;
 	}
-};
+	else
+		fprintf(stderr, "usage: chord server_endpoint --client\n");
+}
 
 int32 main(int32 argc, char ** argv)
 {
@@ -41,49 +124,10 @@ int32 main(int32 argc, char ** argv)
 	gThreadManager = new ThreadManager();
 	gCommandLine = new CommandLine(argc, argv);
 	
-	Chord::LocalNode localNode;
-
-	Net::Ipv4 peer;
-	if (CommandLine::get().getValue("input", peer, [](const String & str, Net::Ipv4 & peer){
-
-		Net::parseIpString(peer, *str);
-	})) localNode.join(peer);
-
-	auto receiver = RunnableThread::create(new Chord::ReceiveTask(&localNode), "Receiver");
-	auto updater = RunnableThread::create(new Chord::UpdateTask(&localNode), "Updater");
-	auto listener = RunnableThread::create(new Chord::ListenTask(&localNode), "Listener");
-
-	char line[256] = {};
-	char c; do
-	{
-		switch (c = getc(stdin))
-		{
-		case 'p':
-		{
-			localNode.printInfo();
-			break;
-		}
-
-		case 'l':
-		{
-			uint32 key;
-			scanf("%x", &key);
-
-			auto peer = localNode.lookup(key);
-			printf("RESULT: found key 0x%08x @ [%s]\n", key, *peer.get().getInfoString());
-			break;
-		}
-		
-		case 'q':
-		{
-			localNode.leave();
-			break;
-		}
-
-		default:
-			break;
-		}
-	} while(c != 'q');
+	if (CommandLine::get().getValue("client"))
+		createClient();
+	else
+		createServer();
 
 	return 0;
 }

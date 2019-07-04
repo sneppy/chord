@@ -50,5 +50,7 @@ namespace Chord
 				// TODO: remove from client map when connection is closed
 				clients.insert(addr, RunnableThread::create(new ServeTask(node, move(client)), "ServeTask"));
 		}
+
+		return 0;
 	}
 } // namespace Chord
