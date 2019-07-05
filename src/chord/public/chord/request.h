@@ -88,7 +88,7 @@ namespace Chord
 		 * @param [in] val source value
 		 */
 		template<typename T>
-		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setSrc(typename ConstRef<T>::Type val)
+		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setSrc(const T & val)
 		{
 			moveOrCopy(*reinterpret_cast<T*>(src), val);
 		}
@@ -99,7 +99,7 @@ namespace Chord
 		 * @param [in] val destination value
 		 */
 		template<typename T>
-		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setDst(typename ConstRef<T>::Type val)
+		FORCE_INLINE typename EnableIf<!IsPointer<T>::value, void>::Type setDst(const T & val)
 		{
 			moveOrCopy(*reinterpret_cast<T*>(dst), val);
 		}

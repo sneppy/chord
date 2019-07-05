@@ -201,14 +201,39 @@ namespace Net
 
 			// Write data
 			const sizet len = arr.getBytes();
-			return write((const void*)*arr, arr.getBytes(), 0) == len;
+			return write((const void*)*arr, len, 0) == len;
 		}
 
 		template<typename T>
-		FORCE_INLINE bool write(typename ConstRef<T>::Type data)
+		FORCE_INLINE bool write(const T & data)
 		{
 			return write((const void*)&data, (sizet)sizeof(T), 0) == sizeof(T);
 		}
 		/// @}
 	};
+
+	/**
+	 * String read/write specializations
+	 * @see SocketStream::read and @see SocketStream::write
+	 * @{
+	 */
+	template<>
+	FORCE_INLINE bool SocketStream::read<String>(String & data)
+	{
+		auto & arr = data.getArray();
+		if (read(arr))
+		{
+			arr[arr.getCount()] = '\0';
+			return true;
+		}
+
+		return false;
+	}
+
+	template<>
+	FORCE_INLINE bool SocketStream::write<String>(const String & data)
+	{
+		return write(data.getArray());
+	}
+	/// @}
 } // namespace Net

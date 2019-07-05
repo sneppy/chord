@@ -59,11 +59,11 @@ public:
 	 * @return map iterator
 	 * @{
 	 */
-	FORCE_INLINE Iterator find(typename ConstRef<KeyT>::Type key)
+	FORCE_INLINE Iterator find(const KeyT & key)
 	{
 		return tree.find(PairT(key));
 	}
-	FORCE_INLINE ConstIterator find(typename ConstRef<KeyT>::Type key) const
+	FORCE_INLINE ConstIterator find(const KeyT & key) const
 	{
 		return tree.find(PairT(key));
 	}
@@ -95,7 +95,7 @@ public:
 	 * @param [in] key search key
 	 * @return ref to associated value
 	 */
-	FORCE_INLINE ValT & operator[](typename ConstRef<KeyT>::Type key)
+	FORCE_INLINE ValT & operator[](const KeyT & key)
 	{
 		PairT pair	= PairT(key);
 		Iterator it	= tree.find(pair);
@@ -120,7 +120,7 @@ public:
 	{
 		return tree.insertUnique(pair);
 	}
-	FORCE_INLINE PairT & insert(typename ConstRef<KeyT>::Type key, typename ConstRef<ValT>::Type val)
+	FORCE_INLINE PairT & insert(const KeyT & key, const ValT & val)
 	{
 		return insert(PairT(key, val));
 	}
@@ -133,7 +133,7 @@ public:
 	 * @param [in] it iterator
 	 * @{
 	 */
-	FORCE_INLINE void remove(typename ConstRef<KeyT>::Type key)
+	FORCE_INLINE void remove(const KeyT & key)
 	{
 		tree.remove(tree.find(PairT(key)));
 	}

@@ -41,6 +41,8 @@ namespace Net
 			// Move socket file descriptor
 			sockfd = other.sockfd;
 			other.sockfd = -1;
+
+			return *this;
 		}
 
 		/// Destructor
@@ -169,7 +171,7 @@ namespace Net
 		}
 
 		template<typename T, typename IpType = Ipv4>
-		FORCE_INLINE bool write(typename ConstRef<T>::Type val, const IpType & recipient)
+		FORCE_INLINE bool write(const T & val, const IpType & recipient)
 		{
 			return write((const void*)&val, (sizet)sizeof(T), recipient) == sizeof(T);
 		}

@@ -18,23 +18,28 @@ protected:
 
 public:
 	/// Default constructor
-	FORCE_INLINE String() :
-		data(16) {}
+	FORCE_INLINE String()
+		: data{1}
+	{
+		data[0] = '\0';
+	}
 	
-protected:
-	/// A protected constructor that initializes an empty buffer
-	explicit FORCE_INLINE String(uint64 n) :
-		data(n) {}
+	/// Constructor that initializes an empty buffer
+	explicit FORCE_INLINE String(uint64 n)
+		: data{n + 1, n}
+	{
+		// Zero initialize
+		PlatformMemory::memset(data.buffer, 0, n + 1);
+	}
 
-public:
 	/// String constructor
 	FORCE_INLINE String(const ansichar * string, uint32 len = 0)
-		: data((len ? len : PlatformString::strlen(string)) + 1)
+		: data{(len ? len : PlatformString::strlen(string)) + 1}
 	{
 		if (string)
 		{
 			data.count = data.size - 1;
-			moveOrCopy(data.buffer, string, data.count);
+			copy(data.buffer, string, data.count);
 
 			// Teminate string
 			data[data.count] = '\0';
@@ -43,11 +48,26 @@ public:
 
 	/// Copy constructor
 	FORCE_INLINE String(const String & other)
-		: data(other.data.count + 1)
+		: String(other.data.buffer, other.data.count)
 	{
-		// Copy content
-		PlatformMemory::memcpy(data.buffer, other.data.buffer, (data.count = other.data.count) + 1);
+		//
 	}
+
+	/// Move constructor
+	FORCE_INLINE String(String && other) = default;
+
+	/// Copy assignment
+	String & operator=(const String & other)
+	{
+		data.resize(other.data.count + 1);
+		data.count = other.data.count;
+		copy(data.buffer, other.data.buffer, data.count + 1);
+
+		return *this;
+	}
+
+	/// Move assignment
+	String & operator=(String && other) = default;
 
 	/// Provides access to underying data
 	/// @{
@@ -61,14 +81,23 @@ public:
 	FORCE_INLINE const ansichar &	operator[](uint64 i) const	{ return data.buffer[i]; }
 	/// @}
 
+	/**
+	 * Returns underlying array
+	 * @{
+	 */
+	FORCE_INLINE const Array<ansichar> & getArray() const
+	{
+		return data;
+	}
+
+	FORCE_INLINE Array<ansichar> & getArray()
+	{
+		return data;
+	}
+	/// @}
+
 	/// Returns string length (without null terminating character)
 	FORCE_INLINE uint64 getLength() const { return data.count; }
-
-	/// Returns underlying array
-	/// @{
-	FORCE_INLINE const Array<ansichar> &	getArray() const	{ return data; }
-	FORCE_INLINE Array<ansichar> &			getArray()			{ return data; }
-	/// @}
 
 	/**
 	 * Compare with another string

@@ -1,3 +1,4 @@
+#include "misc/log.h"
 #include "chord/serve_task.h"
 #include "chord/local_node.h"
 #include "crypto/sha1.h"
@@ -14,7 +15,7 @@ namespace Chord
 		auto result = node->lookup(key).get();
 		client.write<NodeInfo>(result);
 
-		printf("LOG: found key #%u @ %s\n", key, *result.getInfoString());
+		LOG(LOG, "found key #%u @ %s\n", key, *result.getInfoString());
 	}
 
 	void ServeTask::upload()
@@ -24,11 +25,11 @@ namespace Chord
 		client.read(filename);
 
 		// Check hash of file
-		{
+		/* {
 			uint32 hash[5];
 			Crypto::sha1(filename, hash);
 			// TODO
-		}
+		} */
 
 		// Read content
 		// ! Note: if request exceeds a maximum
@@ -37,7 +38,7 @@ namespace Chord
 		Array<ubyte> data;
 		client.read(data);
 
-		printf("LOG: client @ %s wants to upload '%s' (%.2f KB)\n", *getIpString(client.getAddress()), *filename, data.getBytes() / 1024.f);
+		LOG(LOG, "client @ %s wants to upload '%s' (%.2f KB)\n", *getIpString(client.getAddress()), *filename, data.getBytes() / 1024.f);
 
 		// TODO: file manager
 		{
@@ -58,7 +59,7 @@ namespace Chord
 		String filename;
 		client.read(filename);
 
-		printf("LOG: client @ %s requested file '%s'\n", *getIpString(client.getAddress()), *filename);
+		LOG(LOG, "client @ %s requested file '%s'\n", *getIpString(client.getAddress()), *filename);
 
 		// TODO: file manager
 		{
@@ -78,6 +79,11 @@ namespace Chord
 
 				client.write(payload);
 			}
+			else
+			{
+				Array<ubyte> emptyPayload(0);
+				client.write(emptyPayload);
+			}
 		}
 	}
 	
@@ -90,6 +96,9 @@ namespace Chord
 	
 	int32 ServeTask::run()
 	{
+		// Send own id to client
+		client.write(node->id);
+
 		bool bRunning = true;
 		while (bRunning)
 		{
@@ -108,12 +117,21 @@ namespace Chord
 				case 2:
 					retrieve();
 					break;
+
+				case 0xffffffff:
+					// Terminate task
+					bRunning = false;
+					break;
 				
 				default:
-					printf("LOG: unkown command received from client @ %s\n", *getIpString(client.getAddress()));
+					ERROR(WARNING, "unkown command received from client @ %s\n", *getIpString(client.getAddress()));
 					break;
 				}
 			}
 		}
+
+		printf("INFO: terminating connection with client @ %s\n", *getIpString(client.getAddress()));
+
+		return 0;
 	}
 } // namespace Chord

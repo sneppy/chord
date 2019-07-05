@@ -22,7 +22,7 @@ public:
 
 public:
 	/// Pair constructor
-	FORCE_INLINE Pair(typename ConstRef<A>::Type _first = A(), typename ConstRef<B>::Type _second = B()) :
+	FORCE_INLINE Pair(const A & _first = A(), const B & _second = B()) :
 		first(_first),
 		second(_second) {}
 

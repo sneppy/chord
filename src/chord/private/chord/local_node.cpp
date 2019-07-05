@@ -1,3 +1,4 @@
+#include "misc/log.h"
 #include "chord/local_node.h"
 #include "crypto/sha1.h"
 
@@ -195,7 +196,7 @@ namespace Chord
 					// Update successor
 					setSuccessor(target);
 
-					printf("LOG: new successor is %s\n", *successor.getInfoString());
+					LOG(LOG, "new successor is %s\n", *successor.getInfoString());
 				}
 			}
 		);
@@ -219,7 +220,7 @@ namespace Chord
 			// Update finger
 			setFinger(successor, i);
 			
-			printf("LOG: updating finger #%u with %s\n", i, *fingers[i].getInfoString());
+			LOG(LOG, "updating finger #%u with %s\n", i, *fingers[i].getInfoString());
 		}
 		else
 		{
@@ -234,7 +235,7 @@ namespace Chord
 					// Update finger
 					setFinger(req.getDst<NodeInfo>(), i);
 
-					printf("LOG: updating finger #%u with %s\n", i, *fingers[i].getInfoString());
+					LOG(LOG, "updating finger #%u with %s\n", i, *fingers[i].getInfoString());
 				}
 				// * checkPeer(next) on error
 			);
@@ -270,7 +271,7 @@ namespace Chord
 					
 					setSuccessor(req.getDst<NodeInfo>());
 
-					printf("LOG: new successor is %s\n", *successor.getInfoString());
+					LOG(LOG, "new successor is %s\n", *successor.getInfoString());
 				}
 			);
 			req.setDst<uint32>(id + 1);
@@ -283,7 +284,7 @@ namespace Chord
 				// Unset finger
 				setFinger(self, i);
 		
-		printf("LOG: removed node %s from local view\n", *peer.getInfoString());
+		LOG(LOG, "removed node %s from local view\n", *peer.getInfoString());
 	}
 
 	void LocalNode::checkPeer(const NodeInfo & peer)
@@ -314,10 +315,13 @@ namespace Chord
 		// Lock all callbacks
 		ScopeLock _(&callbacksGuard);
 
-		for (auto it = callbacks.begin(); it != callbacks.end(); ++it)
+		for (auto it = callbacks.begin(); it != callbacks.end();)
 		{
+			auto next = it; ++next;
+
 			auto id			= it->first;
 			auto & callback	= it->second;
+
 			if (callback.tick(dt))
 			{
 				// Execute error callback
@@ -326,11 +330,14 @@ namespace Chord
 				// Remove expired callback
 				callbacks.remove(it);
 
-				printf("LOG: no reply received for request with id %08x\n", id);
+				LOG(LOG, "no reply received for request with id %08x\n", id);
 			}
+
+			// Next
+			it = next;
 		}
 
-		printf("LOG: %llu pending requests\n", callbacks.getCount());
+		LOG(LOG, "%llu pending requests\n", callbacks.getCount());
 	}
 
 	void LocalNode::handleRequest(const Request & req)
@@ -339,37 +346,37 @@ namespace Chord
 		{
 	#if BUILD_DEBUG
 		case Request::PING:
-			printf("LOG: received PING from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received PING from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			break;
 	#endif
 
 		case Request::REPLY:
-			printf("LOG: received REPLY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received REPLY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			handleReply(req);
 			break;
 
 		case Request::LOOKUP:
-			printf("LOG: received LOOKUP from %s with id 0x%08x and hop count = %u\n", *getIpString(req.sender), req.id, req.hopCount);
+			LOG(LOG, "received LOOKUP from %s with id 0x%08x and hop count = %u\n", *getIpString(req.sender), req.id, req.hopCount);
 			handleLookup(req);
 			break;
 
 		case Request::NOTIFY:
-			printf("LOG: received NOTIFY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received NOTIFY from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			handleNotify(req);
 			break;
 
 		case Request::LEAVE:
-			printf("LOG: received LEAVE from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received LEAVE from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			handleLeave(req);
 			break;
 		
 		case Request::CHECK:
-			printf("LOG: received CHECK from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received CHECK from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			handleCheck(req);
 			break;
 		
 		default:
-			printf("LOG: received UNKOWN from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
+			LOG(LOG, "received UNKOWN from %s with id 0x%08x\n", *getIpString(req.sender), req.id);
 			break;
 		}
 	}
@@ -459,7 +466,7 @@ namespace Chord
 			// Update predecessor
 			setPredecessor(src);
 
-			printf("LOG: new predecessor is %s\n", *predecessor.getInfoString());
+			LOG(LOG, "new predecessor is %s\n", *predecessor.getInfoString());
 		}
 	}
 

@@ -18,7 +18,7 @@ struct Compare
 	 * @param [in] a,b operands to compare
 	 * @return 1 if a > b, -1 if a < b, 0 otherwise
 	 */
-	FORCE_INLINE int32 operator()(typename ConstRef<A>::Type a, typename ConstRef<B>::Type b) const
+	FORCE_INLINE int32 operator()(const A & a, const B & b) const
 	{
 		return int32(a > b) - int32(a < b);
 	}

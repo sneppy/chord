@@ -25,7 +25,7 @@ public:
 
 public:
 	/// Default constructor
-	FORCE_INLINE Link(typename ConstRef<T>::Type _data, Link * _next = nullptr, Link * _prev = nullptr) :
+	FORCE_INLINE Link(const T & _data, Link * _next = nullptr, Link * _prev = nullptr) :
 		data(_data),
 		prev(_prev),
 		next(_next) {}
@@ -168,7 +168,7 @@ public:
 
 protected:
 	/// Creates a new link with the provided data
-	FORCE_INLINE LinkRef<T> createLink(typename ConstRef<T>::Type data, LinkRef<T> next = nullptr, LinkRef<T> prev = nullptr)
+	FORCE_INLINE LinkRef<T> createLink(const T & data, LinkRef<T> next = nullptr, LinkRef<T> prev = nullptr)
 	{
 		return new (reinterpret_cast<LinkRef<T>>(allocator->malloc(sizeof(Link<T>)))) Link<T>(data, next, prev);
 	}
@@ -353,7 +353,7 @@ public:
 	 * @{
 	 */
 	/// @return self
-	FORCE_INLINE LinkedList & operator+=(typename ConstRef<T>::Type elem)
+	FORCE_INLINE LinkedList & operator+=(const T & elem)
 	{
 		// Push to end, replaces tail
 		if (LIKELY(tail))
@@ -365,7 +365,7 @@ public:
 		return *this;
 	}
 	/// @return ref to inserted element
-	FORCE_INLINE T & push(typename ConstRef<T>::Type elem)
+	FORCE_INLINE T & push(const T & elem)
 	{
 		operator+=(elem);
 		return tail->data;
@@ -373,7 +373,7 @@ public:
 	/// @}
 
 	/// Inserts in first position
-	FORCE_INLINE T & pushFront(typename ConstRef<T>::Type elem)
+	FORCE_INLINE T & pushFront(const T & elem)
 	{
 		if (LIKELY(head))
 			head = head->prev = createLink(elem, head);
@@ -392,7 +392,7 @@ public:
 	 * 
 	 * @return ref to inserted elem
 	 */
-	T & insert(typename ConstRef<T>::Type elem, uint64 i = 0)
+	T & insert(const T & elem, uint64 i = 0)
 	{
 		// Find i-th link
 		LinkRef<T> it;

@@ -14,7 +14,7 @@ namespace Chord
 	{
 	protected:
 		/// Server endpoint
-		Ipv4 serverEndpoint;
+		NodeInfo serverEndpoint;
 
 		/// Server socket
 		mutable SocketStream serverSocket;
@@ -23,8 +23,8 @@ namespace Chord
 		/**
 		 * Default constructor
 		 */
-		FORCE_INLINE Client(const Ipv4 & inServerEndpoint)
-			: serverEndpoint{inServerEndpoint}
+		FORCE_INLINE Client(const Ipv4 & inServerEndpointAddress)
+			: serverEndpoint{(uint32)-1, inServerEndpointAddress}
 		{
 			//
 		}

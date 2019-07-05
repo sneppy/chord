@@ -18,6 +18,7 @@ namespace Chord
 	{
 		friend ReceiveTask;
 		friend UpdateTask;
+		friend ServeTask;
 
 	protected:
 		union

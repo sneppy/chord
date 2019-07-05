@@ -21,3 +21,16 @@ FORCE_INLINE CONSTEXPR RemoveReferenceT(T) && move(T && obj)
 	return (RemoveReferenceT(T)&&)obj;
 }
 
+/// Forwards lvalues as lvalues or as rvalues
+/// @{
+template<typename T>
+FORCE_INLINE CONSTEXPR T && forward(typename RemoveReference<T>::Type & obj)
+{
+	return static_cast<T&&>(obj);
+}
+template<typename T>
+FORCE_INLINE CONSTEXPR T && forward(typename RemoveReference<T>::Type && obj)
+{
+	return static_cast<T&&>(obj);
+}
+/// @}

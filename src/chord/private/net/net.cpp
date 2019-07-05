@@ -193,27 +193,4 @@ namespace Net
 		delete hint;
 		return out;
 	}
-
-	//////////////////////////////////////////////////
-	// Sockets
-	//////////////////////////////////////////////////
-	
-	template<>
-	bool SocketStream::read<String>(String & data)
-	{
-		auto & arr = data.getArray();
-		if (read(arr))
-		{
-			arr[arr.getCount()] = '\0';
-			return true;
-		}
-
-		return false;
-	}
-
-	template<>
-	bool SocketStream::write<String>(const String & data)
-	{
-		return write(data.getArray());
-	}
 } // namespace Net

@@ -53,7 +53,7 @@ public:
 public:
 	/// Default constructor
 	FORCE_INLINE BinaryNode(
-		typename ConstRef<T>::Type _data,
+		const T & _data,
 		NodeColor _color = NodeColor::RED,
 		BinaryNode* _parent = nullptr,
 		BinaryNode* _left = nullptr,
@@ -132,7 +132,7 @@ public:
 	 * @return node if found, nullptr otherwise
 	 */
 	/// Search begins from this node
-	FORCE_INLINE BinaryNode * find(typename ConstRef<T>::Type search)
+	FORCE_INLINE BinaryNode * find(const T & search)
 	{
 		// Compare search key and node key
 		const int32 compare = CompareT()(search, data);
@@ -673,7 +673,7 @@ private:
 		search() {}
 	
 	/// Initialize iterator with search value and node
-	NodeIterator(typename ConstRef<U>::Type _search, BinaryNodeRef<U> _node)
+	NodeIterator(const U & _search, BinaryNodeRef<U> _node)
 		: node(_node)
 		, search(_search)
 	{
@@ -782,7 +782,7 @@ public:
 
 protected:
 	/// Create a new node using the class allocator
-	FORCE_INLINE NodeRef createNode(typename ConstRef<T>::Type data)
+	FORCE_INLINE NodeRef createNode(const T & data)
 	{
 		return new (reinterpret_cast<NodeRef>(allocator->malloc(sizeof(Node)))) Node(data);
 	}
@@ -940,7 +940,7 @@ public:
 	 * @param [in] search search operand
 	 * @return node iterator
 	 */
-	FORCE_INLINE Iterator find(typename ConstRef<T>::Type search) const
+	FORCE_INLINE Iterator find(const T & search) const
 	{
 		return Iterator(search, root);
 	}
@@ -965,7 +965,7 @@ public:
 	 * 
 	 * @param [in] data data to insert in node
 	 */
-	T & insert(typename ConstRef<T>::Type data)
+	T & insert(const T & data)
 	{
 		if (LIKELY(root != nullptr))
 		{
@@ -991,7 +991,7 @@ public:
 	 * 
 	 * @param [in] data data to insert in node
 	 */
-	T & insertUnique(typename ConstRef<T>::Type data)
+	T & insertUnique(const T & data)
 	{
 		if (LIKELY(root != nullptr))
 		{
@@ -1028,7 +1028,7 @@ public:
 	 * @return removed node
 	 * @{
 	 */
-	void remove(typename ConstRef<T>::Type search)
+	void remove(const T & search)
 	{
 		if (LIKELY(root))
 		{

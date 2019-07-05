@@ -111,6 +111,8 @@ static FORCE_INLINE int32 createClient()
 	}
 	else
 		fprintf(stderr, "usage: chord server_endpoint --client\n");
+	
+	return 0;
 }
 
 int32 main(int32 argc, char ** argv)

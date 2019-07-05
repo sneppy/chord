@@ -28,7 +28,7 @@ protected:
 		T data;
 
 		/// Default constructor
-		FORCE_INLINE Client(typename ConstRef<T>::Type & _data, Client * _next = nullptr) :
+		FORCE_INLINE Client(const T & _data, Client * _next = nullptr) :
 			data(_data),
 			next(nullptr) {}
 	};
@@ -67,7 +67,7 @@ public:
 
 protected:
 	/// Construct client node
-	FORCE_INLINE ClientRef createClient(typename ConstRef<T>::Type data)
+	FORCE_INLINE ClientRef createClient(const T & data)
 	{
 		return new (reinterpret_cast<ClientRef>(allocator->malloc(sizeof(Client)))) Client(data);
 	}
@@ -219,7 +219,7 @@ public:
 	 * @param [in] data client data
 	 * @return ref to inserted data
 	 */
-	FORCE_INLINE T & push(typename ConstRef<T>::Type data)
+	FORCE_INLINE T & push(const T & data)
 	{
 		// Insert at the end of the queue
 		if (last == nullptr)

@@ -1,3 +1,4 @@
+#include "misc/log.h"
 #include "chord/client.h"
 #include "crypto/sha1.h"
 
@@ -25,7 +26,7 @@ namespace Chord
 		String filename(line);
 
 		Array<ubyte> content;
-		if (filename == "-")
+		if (filename.compare("-") == 0)
 		{
 			// Read stdin
 			char c; while ((c = getc(stdin)) != EOF) content.add(c);
@@ -36,7 +37,7 @@ namespace Chord
 			FILE * fp = fopen(*filename, "r");
 			if (!fp)
 			{
-				fprintf(stderr, "ERROR: file %s not found\n", *filename);
+				ERROR(ERROR, "file %s not found\n", *filename);
 				return;
 			}
 
@@ -75,9 +76,16 @@ namespace Chord
 			SocketStream * targetSocket = &serverSocket;
 			bool bNeedClose = false;
 
-			if (target.addr != serverEndpoint)
+			if (target.addr == Ipv4::any)
+			{
+				ERROR(WARNING, "could not locate target node for name %s with key %u\n", *name, key);
+
+				targetSocket = nullptr;
+			}
+			if (target.id != serverEndpoint.id)
 			{
 				// Target is elsewhere in the network
+				printf("%s == %s?\n", *getIpString(target.addr), *getIpString(serverSocket.getAddress()));
 
 				targetSocket = new SocketStream;
 
@@ -103,11 +111,11 @@ namespace Chord
 				// TODO: Wait for response?
 
 				// Dispose temporary socket resource
-				if (bNeedClose) delete targetSocket;
+				if (targetSocket && bNeedClose) delete targetSocket;
 			}
 		}
 		else
-			fprintf(stderr, "ERROR: could not find target for name %s with key %u\n", *name, key);
+			ERROR(ERROR, "could not locate target node for name %s with key %u\n", *name, key);
 	}
 
 	void Client::doRetrieve()
@@ -141,7 +149,13 @@ namespace Chord
 			SocketStream * targetSocket = &serverSocket;
 			bool bNeedClose = false;
 
-			if (target.addr != serverEndpoint)
+			if (target.addr == Ipv4::any)
+			{
+				ERROR(WARNING, "could not locate target node for name %s with key %u\n", *name, key);
+
+				targetSocket = nullptr;
+			}
+			if (target.id != serverEndpoint.id)
 			{
 				// Target is elsewhere in the network
 
@@ -181,7 +195,7 @@ namespace Chord
 							FILE * fp = fopen(*filename, "w");
 							if (!fp)
 							{
-								fprintf(stderr, "ERROR: could not create or open file %s\n", *filename);
+								ERROR(ERROR, "could not create or open file %s\n", *filename);
 								return;
 							}
 
@@ -190,29 +204,35 @@ namespace Chord
 							fclose(fp);
 						}
 					}
+					else
+						ERROR(WARNING, "could not locate file with name %s (key: %u)\n", *name, key);
 				}
 
-				// TODO: Wait for response?
-
 				// Dispose temporary socket resource
-				if (bNeedClose) delete targetSocket;
+				if (targetSocket && bNeedClose) delete targetSocket;
 			}
 		}
 		else
-			fprintf(stderr, "ERROR: could not find target for name %s with key %u\n", *name, key);
+			ERROR(WARNING, "could not locate target node for name %s with key %u\n", *name, key);
 	}
 
 	bool Client::init()
 	{
 		// Init socket resource and connect to server
-		return serverSocket.init() && serverSocket.connect(serverEndpoint);
+		return serverSocket.init() && serverSocket.connect(serverEndpoint.addr);
 	}
 
 	int32 Client::run()
 	{
-		bool bLocalRunning = true;
+		// Terminal command
 		ubyte cmd;
 
+		// Get server endpoint id
+		serverSocket.read(serverEndpoint.id);
+
+		LOG(LOG, "connected to server #%08x @ %s\n", serverEndpoint.id, *getIpString(serverEndpoint.addr));
+
+		bool bLocalRunning = true;
 		while (bLocalRunning)
 		{
 			char line[256] = {};
@@ -229,7 +249,9 @@ namespace Chord
 
 			case 'q':
 				// Quit client
-				fprintf(stdout, "LOG: bye bye!\n");
+				LOG(LOG, "bye bye!\n");
+
+				serverSocket.write(0xffffffff); // -1: close
 				bLocalRunning = false;
 				break;
 			
@@ -251,7 +273,7 @@ namespace Chord
 				break;
 			
 			default:
-				fprintf(stderr, "ERROR: command '%c' not recognized\n", cmd);
+				ERROR(ERROR, "command '%c' not recognized\n", cmd);
 				break;
 			}
 		}
